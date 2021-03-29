@@ -1,0 +1,38 @@
+application_test
+48744
+clef primaire:SK_ID_CURR
+
+application_train
+307511
+clef primaire:SK_ID_CURR
+
+bureau_balance
+27299925
+clef primaire:aucune
+(identifiant SK_BUREAU_ID + MONTHS_BALANCE)
+
+bureau
+1716428
+clef primaire : SK_BUREAU_ID
+
+previous_application
+1670214
+clef primaire:SK_ID_PREV
+
+credit_card_balance
+3840312
+clef primaire:aucune
+unique (SK_ID_CURR,SK_ID_PREV,MONTHS_BALANCE)
+
+pos_cash_balance
+10001358
+clef primaire:aucune
+unique (SK_ID_CURR,SK_ID_PREV,MONTHS_BALANCE)
+
+installments_payments
+13605401
+clef primaire:aucune
+
+
+
+sample_submission
