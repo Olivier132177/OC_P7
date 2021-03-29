@@ -20,7 +20,7 @@ sample_submission=pd.read_csv('sample_submission.csv')
 ########################### feature engeneering 1 #####################
 
 feat_eng1=True
-if feat_eng1==False:
+if not feat_eng1:
     B=fc.create_bureau_features(bureau) #creation de 10 features
     B.to_csv('bureau_avec_features.csv')
     print("fini")
@@ -30,4 +30,7 @@ else :
 ########################### feature engeneering 2 #####################
 
 df=fc.feat_eng(application_train, application_test)
+
+#comment
+
 
