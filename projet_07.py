@@ -7,6 +7,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 
 pd.set_option('display.max_colwidth', 40)
+pd.set_option('display.max_columns', 40)
+
 path='/home/olivier/Desktop/openclassrooms/P7/data/'
 
 bureau_balance=pd.read_csv(path+'bureau_balance.csv')
@@ -32,21 +34,21 @@ else :
     bureau_avec_features=pd.read_csv(path+'bureau_avec_features.csv', index_col=0)
 
 ########################### feature engeneering 2 #####################
-
-if not feat_eng1:
+feat_eng2=True
+if not feat_eng2:
     application_test=pd.read_csv(path+'application_test.csv')
     application_train=pd.read_csv(path+'application_train.csv')
-    df=fc.feat_eng(application_train, application_test)
-    df.to_csv(path+'application_all.csv')
+    application=fc.feat_eng(application_train, application_test)
+    application.to_csv(path+'application_all.csv')
 else :
-    application=pd.read_csv(path+'application_all.csv')
-
-##################################################################
-bureau_avec_features.head()
-bureau_avec_features.columns
-bureau_avec_features.iloc[0]
-
-info_colonnes
-credit_card_balance
-
+    application=pd.read_csv(path+'application_all.csv', index_col=0)
 ##################### Modelisation ################################""
+
+feat_eng3=True
+if not feat_eng3:
+    B2=bureau_avec_features.iloc[:,-8:-6].join(bureau_avec_features.iloc[:,-5:]).join(bureau_avec_features.iloc[:,0])
+    B2=B2.drop_duplicates()
+    application_final=pd.merge(application, B2, on='SK_ID_CURR')
+    application_final.to_csv(path+'application_final.csv')
+else :
+    application_final=pd.read_csv(path+'application_final.csv', index_col=0)
