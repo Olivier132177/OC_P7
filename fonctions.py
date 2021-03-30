@@ -251,8 +251,8 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
     df['CREDIT_LENGTH'] = df['AMT_CREDIT'] / df['AMT_ANNUITY']
 
     external_sources = df[['EXT_SOURCE_1','EXT_SOURCE_2','EXT_SOURCE_3','DAYS_BIRTH']]
-    imputer = SimpleImputer(strategy = 'median')
-    external_sources = imputer.fit_transform(external_sources)
+    #imputer = SimpleImputer(strategy = 'median')
+    #external_sources = imputer.fit_transform(external_sources)
     external_sources= pd.DataFrame(external_sources, columns = ['EXT_SOURCE_1', 'EXT_SOURCE_2', 
                                                                             'EXT_SOURCE_3', 'DAYS_BIRTH'])
 
@@ -278,7 +278,7 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
             'APARTMENTS_MEDI','ENTRANCES_AVG', 'ENTRANCES_MEDI', 'LIVINGAREA_AVG', 'FLOORSMAX_MEDI', 
             'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE'
         ]
-    df.drop(drop_list,axis=1,inplace=True)
+    #df.drop(drop_list,axis=1,inplace=True)
     return df
 
 
