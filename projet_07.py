@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
-
+from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score,roc_auc_score
 pd.set_option('display.max_colwidth', 40)
 pd.set_option('display.max_columns', 40)
+pd.set_option('display.max_rows', 150)
 
 path='/home/olivier/Desktop/openclassrooms/P7/data/'
 
@@ -42,6 +43,7 @@ if not feat_eng2:
     application.to_csv(path+'application_all.csv')
 else :
     application=pd.read_csv(path+'application_all.csv', index_col=0)
+
 ##################### Modelisation ################################""
 
 feat_eng3=True
@@ -49,6 +51,27 @@ if not feat_eng3:
     B2=bureau_avec_features.iloc[:,-8:-6].join(bureau_avec_features.iloc[:,-5:]).join(bureau_avec_features.iloc[:,0])
     B2=B2.drop_duplicates()
     application_final=pd.merge(application, B2, on='SK_ID_CURR')
-    application_final.to_csv(path+'application_final.csv')
+    application_final.to_csv(path+'application_all.csv')
 else :
-    application_final=pd.read_csv(path+'application_final.csv', index_col=0)
+    application_final=pd.read_csv(path+'application_all.csv', index_col=0)
+
+
+##################### classification des variables ################################""
+#label
+label='TARGET'
+#features
+features=application_final.columns[np.isin(application_final.columns,'TARGET', invert=True)]
+#colonnes de catégories
+col_cat=application_final.loc[:,features].select_dtypes(exclude='number').columns #colonnes de catégories
+#colonnes_numeriques
+col_oth=application_final.loc[:,features].select_dtypes(include='number').columns
+#colonnes de booleens
+col_boo=col_oth[col_oth.str.contains('FLAG')\
+    |col_oth.str.contains('REGION_NOT')|\
+        col_oth.str.contains('CITY_NOT')]
+#colonnes_numeriques
+col_num=col_oth[np.isin(col_oth, col_boo, invert=True)]
+
+
+###########imputation des valeurs manquantes
+sp=SimpleImputer(strategy='mean')
