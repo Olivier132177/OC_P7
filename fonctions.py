@@ -175,7 +175,7 @@ def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENG
     B = B.merge(grp2, on = ['SK_ID_CURR'], how = 'left')
     del grp1, grp2
 
-    B['DEBT_CREDIT_RATIO'] = B['TOTAL_CUSTOMER_DEBT']/B['TOTAL_CUSTOMER_CREDIT']
+    #B['DEBT_CREDIT_RATIO'] = B['TOTAL_CUSTOMER_DEBT']/B['TOTAL_CUSTOMER_CREDIT']
 
     del B['TOTAL_CUSTOMER_DEBT'], B['TOTAL_CUSTOMER_CREDIT']
     print('feature 8 ok')
