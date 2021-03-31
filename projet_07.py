@@ -57,6 +57,7 @@ else :
 
 
 ##################### classification des variables ################################""
+application_final=pd.read_csv(path+'application_all.csv', index_col=0)
 #label
 label='TARGET'
 #features
@@ -73,5 +74,17 @@ col_boo=col_oth[col_oth.str.contains('FLAG')\
 col_num=col_oth[np.isin(col_oth, col_boo, invert=True)]
 
 
+for i in application_final[col_cat].columns:
+    print(application_final[i].value_counts(dropna=False))
+
 ###########imputation des valeurs manquantes
 sp=SimpleImputer(strategy='mean')
+sp.fit_transform(application_final.loc[:,col_num])
+
+application_final.loc[:,col_num].mean()
+
+application_final.loc[:,'INCOME_TO_EMPLOYED_RATIO'].sort_values()
+application_final.loc[121622]
+
+application_final['DAYS_EMPLOYED'].sort_values()
+plt.show()
