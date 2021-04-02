@@ -29,43 +29,9 @@ application_test=pd.read_csv(path+'application_test.csv')
 application_train=pd.read_csv(path+'application_train.csv')
 
 ########################### feature engeneering #####################
-
-########1ere partie##########
-
-feat_eng1=True
-if not feat_eng1:
-    bureau=pd.read_csv(path+'bureau.csv')
-    B=fc.create_bureau_features(bureau) #creation de 10 features
-    B.to_csv(path+'bureau_avec_features.csv')
-    print("fini")
-    bureau_avec_features=pd.read_csv(path+'bureau_avec_features.csv', index_col=0)
-else :
-    bureau_avec_features=pd.read_csv(path+'bureau_avec_features.csv', index_col=0)
-1+2
-########## 2eme partie ########
-
-feat_eng2=True
-if not feat_eng2:
-    application_test=pd.read_csv(path+'application_test.csv')
-    application_train=pd.read_csv(path+'application_train.csv')
-    application=fc.feat_eng(application_train, application_test)
-    application.to_csv(path+'application_all.csv')
-    application=pd.read_csv(path+'application_all.csv', index_col=0)
-else :
-    application=pd.read_csv(path+'application_all.csv', index_col=0)
-
-########### 3eme partie #######
-
-feat_eng3=False
-if not feat_eng3:
-    B2=bureau_avec_features.iloc[:,-7:-5].join(bureau_avec_features.iloc[:,-4:]).join(bureau_avec_features.iloc[:,0])
-    B2=B2.drop_duplicates()
-    del bureau_avec_features
-    print('ok1')
-    application_final=pd.merge(application, B2, on='SK_ID_CURR')
-    application_final.to_csv(path+'application_final.csv')
-    application_final=pd.read_csv(path+'application_final.csv', index_col=0)
-    print('ok2')
+deja_fait=True
+if not deja_fait:
+    fc.feature_engineering(path,False,False,False)
 
 ##################### classification des variables ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0)
@@ -100,10 +66,6 @@ cat_col_cat
 
 #for i in application_final[col_cat] :
 #    print(application_final[i].value_counts())
-
-
-
-
 
 
 #### train test split #######################
