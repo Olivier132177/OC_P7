@@ -388,3 +388,4 @@ def scores_et_graphs(y_test,resu_lr,lr,df_final_test):
     plot_confusion_matrix(lr,df_final_test,y_test)
     plt.show(block=False)
 
+

@@ -13,6 +13,7 @@ from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split,GridSearchCV
 from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
 
 pd.set_option('display.max_colwidth', 40)
 pd.set_option('display.max_columns', 40)
@@ -65,10 +66,6 @@ cat_col_cat = [col_cat_train[column].unique() for column in col_cat_train]
 df_final_train, ohe_train,ss_train=fc.preprocessing(col_num_train,col_cat_train, cat_col_cat)
 df_final_test,ohe_test,ss_test=fc.preprocessing(col_num_test,col_cat_test,cat_col_cat)
 
-ohe_train.categories_
-df_final_test.shape
-df_final_train.shape
-
 ################Récupère le nom des colonnes du df train final#######""
 tab_nom_col_cat=[]
 tab_nom_col=[]
@@ -106,7 +103,7 @@ df_coef.to_csv(path+'coefficients.csv')
 #resu
 
 ##### Evaluation (scores et graphs)
-fc.scores_et_graphs(y_test,resu_lr,lr,df_final_train)
+fc.scores_et_graphs(y_test,resu_lr,lr,df_final_test)
 
 
 #gs.cv_results_
@@ -114,15 +111,27 @@ fc.scores_et_graphs(y_test,resu_lr,lr,df_final_train)
 
 #####################gestion du déséquilibre du dataset###########
 
+choix_methode=0
+
+
 # 1 SMOTE
 
 smot=SMOTE(random_state=0)
 df_final_train_v2, y_train_v2 = smot.fit_resample\
     (np.array(df_final_train), np.array(y_train))
 
-lr1=LogisticRegression(max_iter=2000, C=0.01)
+# 2 RandomUnderSampler
 
+rus = RandomUnderSampler(random_state=0)
+df_final_train_v2, y_train_v2 = rus.fit_resample\
+    (np.array(df_final_train), np.array(y_train))
+
+## Modelisation
+
+lr1=LogisticRegression(max_iter=2000, C=0.01)
 lr1.fit(df_final_train_v2, y_train_v2)
 resu_lr=lr1.predict(df_final_test)
 
-fc.scores_et_graphs(y_test,resu_lr,lr1,df_final_train_v2)
+# Scores et graphs
+fc.scores_et_graphs(y_test,resu_lr,lr1,df_final_test)
+
