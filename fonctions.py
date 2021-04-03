@@ -375,17 +375,18 @@ def imputation_valeurs_manquantes(df,col_num, col_cat):
     col_cat2.columns=col_cat
     return col_num2, col_cat2
 
-def scores_et_graphs(y_test,resu_lr,lr,df_final_test):
-    print('Accuracy : {}'.format(accuracy_score(y_test,resu_lr)))
-    print('Matric de confusion : \n{}'.format(confusion_matrix(y_test,resu_lr)))
-    print('AUC : {}'.format(roc_auc_score(y_test,resu_lr)))
-    print('F1 : {}'.format(f1_score(y_test,resu_lr)))
-
-    plot_roc_curve(lr,df_final_test,y_test)
-    plt.show(block=False)
-    plot_precision_recall_curve(lr,df_final_test,y_test)
-    plt.show(block=False)
-    plot_confusion_matrix(lr,df_final_test,y_test)
-    plt.show(block=False)
-
+def scores(y_test,resu_lr,lr,df_final_test):
+    f1=f1_score(y_test,resu_lr)
+    acc =accuracy_score(y_test,resu_lr)
+    mat=confusion_matrix(y_test,resu_lr)
+    a_u_c=roc_auc_score(y_test,resu_lr) 
+    print('Matrice de confusion :{}'.format(mat)) 
+    print('Accuracy : {} AUC : {} F1 : {}\n'.format(round(acc,3),round(a_u_c,3),round(f1,3)))
+    #plot_roc_curve(lr,df_final_test,y_test)
+    #plt.show(block=False)
+    #plot_precision_recall_curve(lr,df_final_test,y_test)
+    #plt.show(block=False)
+    #plot_confusion_matrix(lr,df_final_test,y_test)
+    #plt.show(block=False)
+    return acc, mat, a_u_c, f1
 
