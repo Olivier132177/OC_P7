@@ -1,6 +1,7 @@
 from numpy.core.shape_base import block
 import pandas as pd
 from sklearn import impute
+from sklearn.utils import class_weight
 import fonctions as fc
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,10 +71,10 @@ for i in col_num_train.columns:
 
 #####################gestion du déséquilibre du dataset###########
 tab_resultats =[]
-methodes=['SMOTE', 'RandomUnderSampler','Aucune']
-for i in methodes:
+methodes=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
 
-    if i=='Aucune': # 0 Aucune action
+for i in methodes:
+    if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
 
         df_final_train_v2=df_final_train
         y_train_v2=y_train
@@ -91,10 +92,12 @@ for i in methodes:
             (np.array(df_final_train), np.array(y_train))
 
     ## Modelisation
-    val_c=[0.001,0.01,0.1,1,10]
+    val_c=[0.01,0.1,1,10]
     for j in val_c:
-        lr1=LogisticRegression(max_iter=2000, C=j)
-
+        if i =='Class_weight':
+            lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
+        else:
+            lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
         lr1.fit(df_final_train_v2, y_train_v2)
         resu_lr=lr1.predict(df_final_test)
 
@@ -110,6 +113,9 @@ for i in methodes:
 df_resultats=pd.DataFrame(tab_resultats)
 print('fini')
 df_resultats.to_csv(path+'df_resultats.csv')
+df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
+df_resultats.sort_values('AUC',ascending=False)
+
 ##########" modelisation pour étude des coefficients#############"
 
 lr=LogisticRegression(max_iter=2000, C=0.01)
