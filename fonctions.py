@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
+    ,roc_auc_score, ConfusionMatrixDisplay, plot_roc_curve\
+        , plot_confusion_matrix, plot_precision_recall_curve
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
@@ -371,3 +374,17 @@ def imputation_valeurs_manquantes(df,col_num, col_cat):
     col_cat2=pd.DataFrame(sp2.fit_transform(df.loc[:,col_cat]))
     col_cat2.columns=col_cat
     return col_num2, col_cat2
+
+def scores_et_graphs(y_test,resu_lr,lr,df_final_test):
+    print('Accuracy : {}'.format(accuracy_score(y_test,resu_lr)))
+    print('Matric de confusion : \n{}'.format(confusion_matrix(y_test,resu_lr)))
+    print('AUC : {}'.format(roc_auc_score(y_test,resu_lr)))
+    print('F1 : {}'.format(f1_score(y_test,resu_lr)))
+
+    plot_roc_curve(lr,df_final_test,y_test)
+    plt.show(block=False)
+    plot_precision_recall_curve(lr,df_final_test,y_test)
+    plt.show(block=False)
+    plot_confusion_matrix(lr,df_final_test,y_test)
+    plt.show(block=False)
+

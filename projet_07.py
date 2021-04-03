@@ -105,24 +105,24 @@ df_coef.to_csv(path+'coefficients.csv')
 #resu=gs.predict(df_final_test)
 #resu
 
-def scores_et_graphs(y_test,resu_lr,lr):
-    print('Accuracy : {}'.format(accuracy_score(y_test,resu_lr)))
-    print('Matric de confusion : \n{}'.format(confusion_matrix(y_test,resu_lr)))
-    print('AUC : {}'.format(roc_auc_score(y_test,resu_lr)))
-    print('F1 : {}'.format(f1_score(y_test,resu_lr)))
+##### Evaluation (scores et graphs)
+fc.scores_et_graphs(y_test,resu_lr,lr,df_final_train)
 
-    plot_roc_curve(lr,df_final_test,y_test)
-    plt.show(block=False)
-    plot_precision_recall_curve(lr,df_final_test,y_test)
-    plt.show(block=False)
-    plot_confusion_matrix(lr,df_final_test,y_test)
-    plt.show(block=False)
-
-scores_et_graphs(y_test,resu_lr,lr)
 
 #gs.cv_results_
 
 
 #####################gestion du déséquilibre du dataset###########
+
+# 1 SMOTE
+
 smot=SMOTE(random_state=0)
-X_res, y_res = smot.fit_resample(X, y)
+df_final_train_v2, y_train_v2 = smot.fit_resample\
+    (np.array(df_final_train), np.array(y_train))
+
+lr1=LogisticRegression(max_iter=2000, C=0.01)
+
+lr1.fit(df_final_train_v2, y_train_v2)
+resu_lr=lr1.predict(df_final_test)
+
+fc.scores_et_graphs(y_test,resu_lr,lr1,df_final_train_v2)
