@@ -1,3 +1,4 @@
+from numpy.core.shape_base import block
 import pandas as pd
 from sklearn import impute
 import fonctions as fc
@@ -84,9 +85,7 @@ len(tab_nom_col)
 df_final_train
 #######################" modelisation ############################"
 
-lr=LogisticRegression(max_iter=2000)
-param={'C':[1,2]}
-gs=GridSearchCV(lr,param_grid=param, scoring='f1')
+lr=LogisticRegression(max_iter=2000, C=0.01)
 
 lr.fit(df_final_train, y_train)
 resu_lr=lr.predict(df_final_test)
@@ -97,24 +96,31 @@ df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(lr.coef_[0])],axis=1)
 df_coef.columns=['Nom_colonne','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
 df_coef=df_coef.sort_values('AbsCoef',ascending=False)
-df_coef.head(20)
+df_coef.tail(20)
+df_coef.to_csv(path+'coefficients.csv')
 #gs.fit(df_final_train, y_train)
 
+#param={'C':[1,2]}
+#gs=GridSearchCV(lr,param_grid=param, scoring='f1')
 #resu=gs.predict(df_final_test)
 #resu
 
-accuracy_score(y_test,resu)
-confusion_matrix(y_test,resu)
-roc_auc_score(y_test,resu)
-f1_score(y_test,resu)
+def scores_et_graphs(y_test,resu_lr,lr):
+    print('Accuracy : {}'.format(accuracy_score(y_test,resu_lr)))
+    print('Matric de confusion : \n{}'.format(confusion_matrix(y_test,resu_lr)))
+    print('AUC : {}'.format(roc_auc_score(y_test,resu_lr)))
+    print('F1 : {}'.format(f1_score(y_test,resu_lr)))
 
-plot_roc_curve(gs,df_final_test,y_test)
-plt.show()
-plot_precision_recall_curve(gs,df_final_test,y_test)
-plt.show()
-plot_confusion_matrix(gs,df_final_test,y_test)
-plt.show()
-gs.cv_results_
+    plot_roc_curve(lr,df_final_test,y_test)
+    plt.show(block=False)
+    plot_precision_recall_curve(lr,df_final_test,y_test)
+    plt.show(block=False)
+    plot_confusion_matrix(lr,df_final_test,y_test)
+    plt.show(block=False)
+
+scores_et_graphs(y_test,resu_lr,lr)
+
+#gs.cv_results_
 
 
 #####################gestion du déséquilibre du dataset###########
