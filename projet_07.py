@@ -1,15 +1,17 @@
 import pandas as pd
 from sklearn import impute
-import sklearn
 import fonctions as fc
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score,roc_auc_score, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
+    ,roc_auc_score, ConfusionMatrixDisplay, plot_roc_curve\
+        , plot_confusion_matrix, plot_precision_recall_curve
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split,GridSearchCV
+from imblearn.over_sampling import SMOTE
 
 pd.set_option('display.max_colwidth', 40)
 pd.set_option('display.max_columns', 40)
@@ -17,16 +19,16 @@ pd.set_option('display.max_rows', 150)
 
 path='/home/olivier/Desktop/openclassrooms/P7/data/'
 
-bureau_balance=pd.read_csv(path+'bureau_balance.csv')
-credit_card_balance=pd.read_csv(path+'credit_card_balance.csv')
+#bureau_balance=pd.read_csv(path+'bureau_balance.csv')
+#credit_card_balance=pd.read_csv(path+'credit_card_balance.csv')
 info_colonnes=pd.read_csv(path+'HomeCredit_columns_description.csv', encoding='cp850', index_col=0)
-installments_payments=pd.read_csv(path+'installments_payments.csv')
-pos_cash_balance=pd.read_csv(path+'POS_CASH_balance.csv')
-previous_application=pd.read_csv(path+'previous_application.csv')
-sample_submission=pd.read_csv(path+'sample_submission.csv')
-bureau=pd.read_csv(path+'bureau.csv')
-application_test=pd.read_csv(path+'application_test.csv')
-application_train=pd.read_csv(path+'application_train.csv')
+#installments_payments=pd.read_csv(path+'installments_payments.csv')
+#pos_cash_balance=pd.read_csv(path+'POS_CASH_balance.csv')
+#previous_application=pd.read_csv(path+'previous_application.csv')
+#sample_submission=pd.read_csv(path+'sample_submission.csv')
+#bureau=pd.read_csv(path+'bureau.csv')
+#application_test=pd.read_csv(path+'application_test.csv')
+#application_train=pd.read_csv(path+'application_train.csv')
 
 ########################### feature engeneering #####################
 deja_fait=True
@@ -36,81 +38,59 @@ if not deja_fait:
 ##################### classification des variables ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0)
 
-test_set=application_final[application_final['TARGET'].isnull()]
-train_set=application_final[application_final['TARGET'].notnull()]
-label=train_set['TARGET'] #label
-
-features=application_final.columns[\
-    np.isin(application_final.columns,'TARGET', invert=True)] #features
-col_not_num=application_final.loc[:,features]\
-    .select_dtypes(exclude='number').columns #colonnes non numériques
-col_oth=application_final.loc[:,features]\
-    .select_dtypes(include='number').columns #autres colonnes
-col_boo=col_oth[col_oth.str.contains('FLAG')\
-    |col_oth.str.contains('REGION_NOT')|\
-        col_oth.str.contains('CITY_NOT')] #colonnes de booleens parmi les autres colonnes
-col_num=col_oth[np.isin(col_oth, col_boo, invert=True)] #colonnes_numeriques
-col_cat=features[np.isin(features, col_num, invert=True)] #colonnes_categorielles
-del col_not_num, col_oth
+#séparation du train set et du test set, reuperation des noms de colonnes
+train_set,test_set,label,col_cat,col_num,features = fc.preparation_df(application_final)
 
 
-#application_final.loc[:,col_cat]=application_final.loc[:,col_cat].fillna('Inconnu')
 
-
-for i in col_cat:
-    application_final.loc[:,i]=application_final.loc[:,i].astype('str')
-
-cat_col_cat = [application_final[column].unique() for column in application_final[col_cat]]
-cat_col_cat
-
-
-#for i in application_final[col_cat] :
-#    print(application_final[i].value_counts())
-
-
-#### train test split #######################
+#### train test split du train set #######################
 X_train, X_test, y_train, y_test = train_test_split(train_set[features],\
      train_set['TARGET'], test_size=0.25, random_state=0, stratify=train_set['TARGET'])
 
-### imputation des valeurs manquantes
+####### imputation des valeurs manquantes
 
-def imputation_valeurs_manquantes(df,col_num, col_cat):
-    sp1=SimpleImputer(strategy='mean')
-    col_num2=pd.DataFrame(sp1.fit_transform(df.loc[:,col_num]))
-    col_num2.columns=col_num
+#col_num_all, col_cat_all=fc.imputation_valeurs_manquantes(application_final[features],col_num, col_cat)
+col_num_train, col_cat_train=fc.imputation_valeurs_manquantes(X_train,col_num, col_cat)
+col_num_test, col_cat_test=fc.imputation_valeurs_manquantes(X_test,col_num, col_cat)
 
-    sp2=SimpleImputer(strategy='constant', fill_value='inconnu')
-    col_cat2=pd.DataFrame(sp2.fit_transform(df.loc[:,col_cat]))
-    col_cat2.columns=col_cat
-    return col_num2, col_cat2
+#_, ohe_all,_=preprocessing(col_num_all,col_cat_all)
 
-col_num_train, col_cat_train=imputation_valeurs_manquantes(X_train,col_num, col_cat)
-col_num_test, col_cat_test=imputation_valeurs_manquantes(X_test,col_num, col_cat)
+cat_col_cat = [col_cat_train[column].unique() for column in col_cat_train]
 
+#for i in col_cat:
+#    application_final.loc[:,i]=application_final.loc[:,i].astype('str')
 
 ##################" preprocessing ##############################"
-def preprocessing(col_num,col_cat):
-    ohe=OneHotEncoder(sparse=False, handle_unknown='ignore', categories=cat_col_cat)
-    col_cat_tr=pd.DataFrame(ohe.fit_transform(col_cat))
+df_final_train, ohe_train,ss_train=fc.preprocessing(col_num_train,col_cat_train, cat_col_cat)
+df_final_test,ohe_test,ss_test=fc.preprocessing(col_num_test,col_cat_test,cat_col_cat)
 
-    ss=StandardScaler()
-    col_num_tr=pd.DataFrame(ss.fit_transform(col_num))
-
-    all_feat_ok=pd.concat([col_cat_tr,col_num_tr], axis=1)
-    return all_feat_ok
-
-df_final_train=preprocessing(col_num_train,col_cat_train)
-df_final_test=preprocessing(col_num_test,col_cat_test)
-
+ohe_train.categories_
 df_final_test.shape
 df_final_train.shape
+
+
+
+
+
+for i in application_final[col_cat_train].columns:
+    for j in application_final[i].unique():
+        print('{}_{}'.format(i,j)) 
+
+application_final[col_cat_train].columns
+
+
+
 
 #######################" modelisation ############################"
 
 lr=LogisticRegression(max_iter=2000)
-param={'C':[0.1,1,10]}
+param={'C':[1,2]}
 gs=GridSearchCV(lr,param_grid=param, scoring='f1')
 
+lr.fit(df_final_train, y_train)
+resu_lr=lr.predict(df_final_test)
+lr.coef_
+df_final_train
 gs.fit(df_final_train, y_train)
 
 resu=gs.predict(df_final_test)
@@ -118,8 +98,16 @@ resu
 
 accuracy_score(y_test,resu)
 confusion_matrix(y_test,resu)
-cm=ConfusionMatrixDisplay(confusion_matrix(y_test,resu))
-cm.plot()
-plt.show()
 roc_auc_score(y_test,resu)
 f1_score(y_test,resu)
+
+plot_roc_curve(gs,df_final_test,y_test)
+plt.show()
+plot_precision_recall_curve(gs,df_final_test,y_test)
+plt.show()
+plot_confusion_matrix(gs,df_final_test,y_test)
+plt.show()
+gs.cv_results_
+
+smot=SMOTE(random_state=0)
+X_res, y_res = smot.fit_resample(X, y)

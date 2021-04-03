@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
@@ -246,10 +247,12 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
     df['CAR_TO_BIRTH_RATIO'] = df['OWN_CAR_AGE'] / df['DAYS_BIRTH']
     df['CAR_TO_EMPLOYED_RATIO'] = df['OWN_CAR_AGE'] / df['DAYS_EMPLOYED']
     df['PHONE_TO_BIRTH_RATIO'] = df['DAYS_LAST_PHONE_CHANGE'] / df['DAYS_BIRTH']
+    
     for function_name in ['min', 'max', 'mean', 'nanmedian', 'var']:
         feature_name = 'EXT_SOURCES_{}'.format(function_name.upper())
         df[feature_name] = eval('np.{}'.format(function_name))(
             df[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']], axis=1)
+
     df['EXT_SOURCES_PROD'] = df['EXT_SOURCE_1'] * df['EXT_SOURCE_2'] * df['EXT_SOURCE_3']
     df['CREDIT_LENGTH'] = df['AMT_CREDIT'] / df['AMT_ANNUITY']
 
@@ -329,3 +332,42 @@ def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
         application_final.to_csv(path+'application_final.csv')
         application_final=pd.read_csv(path+'application_final.csv', index_col=0)
         print('ok2')
+
+def preparation_df(df):
+    test_set=df[df['TARGET'].isnull()]
+    train_set=df[df['TARGET'].notnull()]
+    label=train_set['TARGET'] #label
+    features=df.columns[\
+        np.isin(df.columns,'TARGET', invert=True)] #features
+    col_not_num=df.loc[:,features]\
+        .select_dtypes(exclude='number').columns #colonnes non numériques
+    col_oth=df.loc[:,features]\
+        .select_dtypes(include='number').columns #autres colonnes
+    col_boo=col_oth[col_oth.str.contains('FLAG')\
+        |col_oth.str.contains('REGION_NOT')|\
+            col_oth.str.contains('CITY_NOT')] #colonnes de booleens parmi les autres colonnes
+    col_num=col_oth[np.isin(col_oth, col_boo, invert=True)] #colonnes_numeriques
+    col_cat=features[np.isin(features, col_num, invert=True)] #colonnes_categorielles
+    del col_not_num, col_oth
+    return train_set,test_set,label,col_cat,col_num,features
+
+def preprocessing(col_num,col_cat, cat_col_cat):
+    ohe=OneHotEncoder(sparse=False, handle_unknown='ignore', categories=cat_col_cat)
+    col_cat_tr=pd.DataFrame(ohe.fit_transform(col_cat))
+
+    ss=StandardScaler()
+    col_num_tr=pd.DataFrame(ss.fit_transform(col_num))
+
+    all_feat_ok=pd.concat([col_cat_tr,col_num_tr], axis=1)
+    return all_feat_ok, ohe, ss
+
+
+def imputation_valeurs_manquantes(df,col_num, col_cat):
+    sp1=SimpleImputer(strategy='mean')
+    col_num2=pd.DataFrame(sp1.fit_transform(df.loc[:,col_num]))
+    col_num2.columns=col_num
+
+    sp2=SimpleImputer(strategy='constant', fill_value='inconnu')
+    col_cat2=pd.DataFrame(sp2.fit_transform(df.loc[:,col_cat]))
+    col_cat2.columns=col_cat
+    return col_num2, col_cat2
