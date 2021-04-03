@@ -68,19 +68,20 @@ ohe_train.categories_
 df_final_test.shape
 df_final_train.shape
 
+################Récupère le nom des colonnes du df train final#######""
+tab_nom_col_cat=[]
+tab_nom_col=[]
+for i in col_cat_train.columns:
+    for j in col_cat_train[i].unique():
+        tab_nom_col_cat.append('{}_{}'.format(i,j))
+        tab_nom_col.append('{}_{}'.format(i,j))
+for i in col_num_train.columns:
+    tab_nom_col.append(i)
 
+len(tab_nom_col_cat)
+len(tab_nom_col)
 
-
-
-for i in application_final[col_cat_train].columns:
-    for j in application_final[i].unique():
-        print('{}_{}'.format(i,j)) 
-
-application_final[col_cat_train].columns
-
-
-
-
+df_final_train
 #######################" modelisation ############################"
 
 lr=LogisticRegression(max_iter=2000)
@@ -89,12 +90,18 @@ gs=GridSearchCV(lr,param_grid=param, scoring='f1')
 
 lr.fit(df_final_train, y_train)
 resu_lr=lr.predict(df_final_test)
-lr.coef_
-df_final_train
-gs.fit(df_final_train, y_train)
 
-resu=gs.predict(df_final_test)
-resu
+
+############### étude des coefficients ###########
+df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(lr.coef_[0])],axis=1)
+df_coef.columns=['Nom_colonne','Coef']
+df_coef['AbsCoef']=np.abs(df_coef['Coef'])
+df_coef=df_coef.sort_values('AbsCoef',ascending=False)
+df_coef.head(20)
+#gs.fit(df_final_train, y_train)
+
+#resu=gs.predict(df_final_test)
+#resu
 
 accuracy_score(y_test,resu)
 confusion_matrix(y_test,resu)
@@ -109,5 +116,7 @@ plot_confusion_matrix(gs,df_final_test,y_test)
 plt.show()
 gs.cv_results_
 
+
+#####################gestion du déséquilibre du dataset###########
 smot=SMOTE(random_state=0)
 X_res, y_res = smot.fit_resample(X, y)
