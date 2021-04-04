@@ -435,6 +435,6 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp):
         result.append(resultat)
 
     result=pd.DataFrame(result)
-
-    return result
+    dernier_coef=lr1.coef_
+    return result, dernier_coef
 

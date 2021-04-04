@@ -24,7 +24,7 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 
 #bureau_balance=pd.read_csv(path+'bureau_balance.csv')
 #credit_card_balance=pd.read_csv(path+'credit_card_balance.csv')
-info_colonnes=pd.read_csv(path+'HomeCredit_columns_description.csv', encoding='cp850', index_col=0)
+#info_colonnes=pd.read_csv(path+'HomeCredit_columns_description.csv', encoding='cp850', index_col=0)
 #installments_payments=pd.read_csv(path+'installments_payments.csv')
 #pos_cash_balance=pd.read_csv(path+'POS_CASH_balance.csv')
 #previous_application=pd.read_csv(path+'previous_application.csv')
@@ -74,20 +74,16 @@ for i in col_num_train.columns:
 #hyperp=[0.01,0.1,1,10]
 meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
 hyperp=[0.01,0.1,1,10]
-df_resultats=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp)
+df_resultats,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp)
 
 df_resultats.to_csv(path+'df_resultats.csv')
 df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
 df_resultats.sort_values('AUC',ascending=False)
 
-##############m,cmo,mmc######################
-df_resultats=pd.read_csv(path+'df_resultats.csv', index_col=0)
-df_resultats
-##########" modelisation pour étude des coefficients#############"
-
-lr=LogisticRegression(max_iter=2000, C=0.01)
-lr.fit(df_final_train, y_train)
-resu_lr=lr.predict(df_final_test)
+############## modelisation avec les meilleurs paramètres ######################
+meth2=['SMOTE']
+hyperp2=[0.01]
+df_resultats2,coefs=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2)
 
 ############### étude des coefficients ###########
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(lr.coef_[0])],axis=1)
