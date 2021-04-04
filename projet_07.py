@@ -103,7 +103,7 @@ hyperp=[0.01,0.1,1,10]
 df_resultats,_,_,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
 df_resultats.to_csv(path+'df_resultats.csv')
 
-df_resultats.sort_values('Recall',ascending=False).head()
+df_resultats.sort_values('Recall',ascending=False)
 
 df_resultats.loc[15]
 ############## modelisation avec des paramètres sélectionnés ######################
