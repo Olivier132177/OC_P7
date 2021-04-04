@@ -16,7 +16,6 @@ from sklearn.model_selection import train_test_split,GridSearchCV
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
 
-pd.set_option('display.max_colwidth', 40)
 pd.set_option('display.max_columns', 40)
 pd.set_option('display.max_rows', 150)
 
@@ -33,15 +32,15 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 #application_test=pd.read_csv(path+'application_test.csv')
 #application_train=pd.read_csv(path+'application_train.csv')
 
-########################### feature engeneering #####################
+#feature engeneering
 deja_fait=True
 if not deja_fait:
     fc.feature_engineering(path,False,False,False)
 
 ##################### suppression des variables inutiles ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0)
-
 variables_supprimees=['AGE_RANGE','APARTMENTS_MEDI','YEARS_BUILD_MODE','SK_ID_CURR']
+
 variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_START',
             'FLAG_EMP_PHONE', 'FLAG_MOBIL', 'FLAG_CONT_MOBILE', 'FLAG_EMAIL', 'FLAG_PHONE',
             'FLAG_OWN_REALTY', 'REG_REGION_NOT_LIVE_REGION', 'REG_REGION_NOT_WORK_REGION',
@@ -61,60 +60,69 @@ variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_ST
             'APARTMENTS_MEDI','ENTRANCES_AVG', 'ENTRANCES_MEDI', 'LIVINGAREA_AVG', 'FLOORSMAX_MEDI', 
             'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE']
 
-application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees, invert=True)]
-application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees_2, invert=True)]
+meilleures_variables=['TARGET','INCOME_TO_BIRTH_RATIO','AMT_INCOME_TOTAL',
+'ORGANIZATION_TYPE','AMT_GOODS_PRICE','AMT_CREDIT','CREDIT_TERM','FLAG_DOCUMENT_13',
+'FLAG_DOCUMENT_3','NAME_EDUCATION_TYPE','FLAG_DOCUMENT_14','FLAG_DOCUMENT_6',
+'CREDIT_LENGTH','EXT_SOURCE_3_x','FLAG_DOCUMENT_16','EXT_SOURCES_VAR','EXT_SOURCES_MAX',
+'DEBT_CREDIT_RATIO','OCCUPATION_TYPE','NAME_TYPE_SUITE','FLAG_DOCUMENT_18',
+'CODE_GENDER','FLAG_DOCUMENT_5','NAME_INCOME_TYPE','FLAG_DOCUMENT_8','OCCUPATION_TYPE',
+'NAME_HOUSING_TYPE','FLAG_DOCUMENT_9','FLAG_DOCUMENT_15']
 
-application_final.shape
+ajout=False
+if ajout==True:
+    application_final=application_final[meilleures_variables]
+elif ajout==False:
+    application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees, invert=True)]
+    application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees_2, invert=True)]
 
-#séparation du train set et du test set, reuperation des noms de colonnes
+#séparation du train set et du test set, recuperation des noms de colonnes
 train_set,test_set,label,col_cat,col_num,features = fc.preparation_df(application_final)
 
-#### train test split du train set #######################
+#train test split du train set
 X_train, X_test, y_train, y_test = train_test_split(train_set[features],\
      train_set['TARGET'], test_size=0.25, random_state=0, stratify=train_set['TARGET'])
 
-####### imputation des valeurs manquantes
+#imputation des valeurs manquantes
 col_num_train, col_cat_train=fc.imputation_valeurs_manquantes(X_train,col_num, col_cat)
 col_num_test, col_cat_test=fc.imputation_valeurs_manquantes(X_test,col_num, col_cat)
-#_, ohe_all,_=preprocessing(col_num_all,col_cat_all)
 
-##################" preprocessing ##############################"
-#libellé des colonnes catégories
-cat_col_cat = [col_cat_train[column].unique() for column in col_cat_train]
+#preprocessing
+cat_col_cat = [col_cat_train[column].unique()\
+     for column in col_cat_train] #libellé des colonnes catégories
 df_final_train, ohe_train,ss_train=fc.preprocessing(col_num_train,col_cat_train, cat_col_cat)
 df_final_test,ohe_test,ss_test=fc.preprocessing(col_num_test,col_cat_test,cat_col_cat)
 
-################Récupère le nom des colonnes du df train final#######""
+#récupèration du nom des colonnes du df train final
 tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
-#####################gestion du déséquilibre du dataset###########
-#meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
-#hyperp=[0.01,0.1,1,10]
+
+application_final.columns
+#Test des différents hyper-paramètres
 meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
 hyperp=[0.01,0.1,1,10]
 df_resultats,_,_,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
-
 df_resultats.to_csv(path+'df_resultats.csv')
-#df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
-df_resultats.sort_values('ROC_AUC',ascending=False)
 
+df_resultats.sort_values('Recall',ascending=False).head()
+
+df_resultats.loc[15]
 ############## modelisation avec des paramètres sélectionnés ######################
-meth2=['RandomUnderSampler']
-hyperp2=[20]
+meth2=['Class_weight']
+hyperp2=[0.01]
 df_resultats2,coefs,prob,clas=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
 
 ########## Meilleurs résultats obtenus ############
-#Méthode : RandomUnderSampler C : 20
-#Matrice de confusion :[[42385 18395]
-# [ 1583  3509]]
-#Accuracy : 0.697 ROC AUC : 0.693 AUC Precision-Recall : 0.437 F1 : 0.26
+#Méthode : Class_weight C : 0.01
+#Matrice de confusion :[[42262 18518]
+# [ 1590  3502]]
+#Accuracy : 0.695 ROC AUC : 0.758 AUC Precision-Recall : 0.237 F1 : 0.258
 
-############### étude des coefficients ###########
-
+#étude des coefficients
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Nom_colonne','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
 df_coef=df_coef.sort_values('AbsCoef',ascending=False)
-df_coef.iloc[30:60]
+df_coef.iloc[40:60]
+df_coef.iloc[-20:-10]
 len(df_coef)
-#df_coef.to_csv(path+'coefficients.csv')
+df_coef.to_csv(path+'coefficients.csv')

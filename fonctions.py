@@ -433,12 +433,16 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graph
             acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,lr1,df_final_test, graphs)
             resultat={'methode':i, 'C':j,'Accuracy':acc,'ROC_AUC':a_u_c,
             'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
-            'True Positive':mat[0,0],'True Negative':mat[1,1],
+            'True Negative':mat[0,0],'True Positive':mat[1,1],
             'False Positive': mat[0,1],'False Negative': mat[1,0]}
             result.append(resultat)
         # Graphs
 
     result=pd.DataFrame(result)
+    result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
+    result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
+
+
     dernier_coef=lr1.coef_
     return result, dernier_coef, proba_lr, resu_lr
 
