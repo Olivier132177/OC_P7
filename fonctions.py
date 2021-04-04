@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
-    ,roc_auc_score, ConfusionMatrixDisplay, plot_roc_curve\
-        , plot_confusion_matrix, plot_precision_recall_curve
+    ,roc_auc_score, precision_recall_curve, plot_roc_curve\
+        , plot_confusion_matrix, plot_precision_recall_curve,auc
 from imblearn.over_sampling import SMOTE
-from imblearn.under_sampling import RandomUnderSampler
+from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from sklearn.linear_model import LogisticRegression
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
@@ -378,23 +378,26 @@ def imputation_valeurs_manquantes(df,col_num, col_cat):
     col_cat2.columns=col_cat
     return col_num2, col_cat2
 
-def scores(y_test,resu_lr,lr,df_final_test):
+def scores(y_test,resu_lr,lr,df_final_test, graphs):
     f1=f1_score(y_test,resu_lr)
     acc =accuracy_score(y_test,resu_lr)
     mat=confusion_matrix(y_test,resu_lr)
-    a_u_c=roc_auc_score(y_test,resu_lr) 
+    a_u_c=roc_auc_score(y_test,resu_lr)
+    pre,rec,thr = precision_recall_curve(y_test,resu_lr) 
+    auc_pr=auc(rec,pre)
     print('Matrice de confusion :{}'.format(mat)) 
-    print('Accuracy : {} AUC : {} F1 : {}\n'.format(round(acc,3),round(a_u_c,3),round(f1,3)))
-    #plot_roc_curve(lr,df_final_test,y_test)
-    #plt.show(block=False)
-    #plot_precision_recall_curve(lr,df_final_test,y_test)
-    #plt.show(block=False)
-    #plot_confusion_matrix(lr,df_final_test,y_test)
-    #plt.show(block=False)
-    return acc, mat, a_u_c, f1
+    print('Accuracy : {} ROC AUC : {} AUC Precision-Recall : {} F1 : {}\n'\
+        .format(round(acc,3),round(a_u_c,3),round(auc_pr,3),round(f1,3)))
+    if graphs==True:
+        plot_roc_curve(lr,df_final_test,y_test)
+        plt.show(block=False)
+        plot_precision_recall_curve(lr,df_final_test,y_test)
+        plt.show(block=False)
+        plot_confusion_matrix(lr,df_final_test,y_test)
+        plt.show(block=False)
+    return acc, mat, a_u_c, f1, auc_pr
 
-
-def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp):
+def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graphs):
     result =[]
 
     for i in meth:
@@ -414,25 +417,28 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp):
             rus = RandomUnderSampler(random_state=0)
             df_final_train_v2, y_train_v2 = rus.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
-
     ## Modelisation
     
-    for j in hyperp:
-        if i =='Class_weight':
-            lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
-        else:
-            lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
-        lr1.fit(df_final_train_v2, y_train_v2)
-        resu_lr=lr1.predict(df_final_test)
+        for j in hyperp:
+            if i =='Class_weight':
+                lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
+            else:
+                lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
+            lr1.fit(df_final_train_v2, y_train_v2)
+            resu_lr=lr1.predict(df_final_test)
 
         # Scores
-        print('Méthode : {} C : {}'.format(i,j))
-        acc, mat, a_u_c, f1=scores(y_test,resu_lr,lr1,df_final_test)
-        resultat={'methode':i, 'C':j,'Accuracy':acc,'AUC':a_u_c,
-        'F1_score':f1,'Confusion_matrix':mat,'True Positive':mat[0,0],
-        'True Negative':mat[1,1],'False Positive': mat[0,1],
-        'False Negative': mat[1,0]}
-        result.append(resultat)
+            print('Méthode : {} C : {}'.format(i,j))
+            acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,lr1,df_final_test, graphs)
+            resultat={'methode':i, 'C':j,'Accuracy':acc,'ROC_AUC':a_u_c,
+            'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
+            'True Positive':mat[0,0],'True Negative':mat[1,1],
+            'False Positive': mat[0,1],'False Negative': mat[1,0]}
+            result.append(resultat)
+        # Graphs
+
+
+
 
     result=pd.DataFrame(result)
     dernier_coef=lr1.coef_
