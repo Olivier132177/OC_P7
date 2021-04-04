@@ -378,12 +378,12 @@ def imputation_valeurs_manquantes(df,col_num, col_cat):
     col_cat2.columns=col_cat
     return col_num2, col_cat2
 
-def scores(y_test,resu_lr,lr,df_final_test, graphs):
+def scores(y_test,resu_lr,proba_lr,lr,df_final_test, graphs):
     f1=f1_score(y_test,resu_lr)
     acc =accuracy_score(y_test,resu_lr)
     mat=confusion_matrix(y_test,resu_lr)
-    a_u_c=roc_auc_score(y_test,resu_lr)
-    pre,rec,thr = precision_recall_curve(y_test,resu_lr) 
+    a_u_c=roc_auc_score(y_test,proba_lr.T[1])
+    pre,rec,thr = precision_recall_curve(y_test,proba_lr.T[1]) 
     auc_pr=auc(rec,pre)
     print('Matrice de confusion :{}'.format(mat)) 
     print('Accuracy : {} ROC AUC : {} AUC Precision-Recall : {} F1 : {}\n'\
@@ -426,10 +426,11 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graph
                 lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
             lr1.fit(df_final_train_v2, y_train_v2)
             resu_lr=lr1.predict(df_final_test)
+            proba_lr=lr1.predict_proba(df_final_test)
 
         # Scores
             print('Méthode : {} C : {}'.format(i,j))
-            acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,lr1,df_final_test, graphs)
+            acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,lr1,df_final_test, graphs)
             resultat={'methode':i, 'C':j,'Accuracy':acc,'ROC_AUC':a_u_c,
             'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
             'True Positive':mat[0,0],'True Negative':mat[1,1],
@@ -437,12 +438,9 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graph
             result.append(resultat)
         # Graphs
 
-
-
-
     result=pd.DataFrame(result)
     dernier_coef=lr1.coef_
-    return result, dernier_coef
+    return result, dernier_coef, proba_lr, resu_lr
 
 def nom_colonnes(col_cat_train,col_num_train):
     tab_nom_col_cat=[]

@@ -92,7 +92,7 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 #hyperp=[0.01,0.1,1,10]
 meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
 hyperp=[0.01,0.1,1,10]
-df_resultats,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
+df_resultats,_,_,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
 
 df_resultats.to_csv(path+'df_resultats.csv')
 #df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
@@ -100,14 +100,14 @@ df_resultats.sort_values('ROC_AUC',ascending=False)
 
 ############## modelisation avec des paramètres sélectionnés ######################
 meth2=['RandomUnderSampler']
-hyperp2=[10]
-df_resultats2,coefs=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
+hyperp2=[20]
+df_resultats2,coefs,prob,clas=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
 
 ########## Meilleurs résultats obtenus ############
-#Méthode : RandomUnderSampler C : 10
-#Matrice de confusion :[[42320 18460]
-# [ 1581  3511]]
-#Accuracy : 0.696 AUC : 0.693 F1 : 0.259
+#Méthode : RandomUnderSampler C : 20
+#Matrice de confusion :[[42385 18395]
+# [ 1583  3509]]
+#Accuracy : 0.697 ROC AUC : 0.693 AUC Precision-Recall : 0.437 F1 : 0.26
 
 ############### étude des coefficients ###########
 
