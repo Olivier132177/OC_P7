@@ -438,3 +438,14 @@ def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp):
     dernier_coef=lr1.coef_
     return result, dernier_coef
 
+def nom_colonnes(col_cat_train,col_num_train):
+    tab_nom_col_cat=[]
+    tab_nom_col=[]
+    for i in col_cat_train.columns:
+        for j in col_cat_train[i].unique():
+            tab_nom_col_cat.append('{}_{}'.format(i,j))
+            tab_nom_col.append('{}_{}'.format(i,j))
+    for i in col_num_train.columns:
+        tab_nom_col.append(i)
+    return tab_nom_col_cat,tab_nom_col
+

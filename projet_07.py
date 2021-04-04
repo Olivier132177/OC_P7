@@ -60,14 +60,7 @@ df_final_train, ohe_train,ss_train=fc.preprocessing(col_num_train,col_cat_train,
 df_final_test,ohe_test,ss_test=fc.preprocessing(col_num_test,col_cat_test,cat_col_cat)
 
 ################Récupère le nom des colonnes du df train final#######""
-tab_nom_col_cat=[]
-tab_nom_col=[]
-for i in col_cat_train.columns:
-    for j in col_cat_train[i].unique():
-        tab_nom_col_cat.append('{}_{}'.format(i,j))
-        tab_nom_col.append('{}_{}'.format(i,j))
-for i in col_num_train.columns:
-    tab_nom_col.append(i)
+tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
 #####################gestion du déséquilibre du dataset###########
 #meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
@@ -80,17 +73,18 @@ df_resultats.to_csv(path+'df_resultats.csv')
 df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
 df_resultats.sort_values('AUC',ascending=False)
 
-############## modelisation avec les meilleurs paramètres ######################
+############## modelisation avec des paramètres sélectionnés ######################
 meth2=['SMOTE']
 hyperp2=[0.01]
 df_resultats2,coefs=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2)
-
 ############### étude des coefficients ###########
-df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(lr.coef_[0])],axis=1)
+df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Nom_colonne','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
 df_coef=df_coef.sort_values('AbsCoef',ascending=False)
-df_coef.tail(20)
+df_coef
+df_coef.tail(30)
+
 df_coef.to_csv(path+'coefficients.csv')
 
 ##### Evaluation (scores et graphs)
