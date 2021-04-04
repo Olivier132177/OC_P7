@@ -70,52 +70,19 @@ for i in col_num_train.columns:
     tab_nom_col.append(i)
 
 #####################gestion du déséquilibre du dataset###########
-tab_resultats =[]
-methodes=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
+#meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
+#hyperp=[0.01,0.1,1,10]
+meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
+hyperp=[0.01,0.1,1,10]
+df_resultats=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp)
 
-for i in methodes:
-    if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
-
-        df_final_train_v2=df_final_train
-        y_train_v2=y_train
-
-    elif i=='SMOTE': # 1 SMOTE
-
-        smot=SMOTE(random_state=0)
-        df_final_train_v2, y_train_v2 = smot.fit_resample\
-            (np.array(df_final_train), np.array(y_train))
-
-    elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
-
-        rus = RandomUnderSampler(random_state=0)
-        df_final_train_v2, y_train_v2 = rus.fit_resample\
-            (np.array(df_final_train), np.array(y_train))
-
-    ## Modelisation
-    val_c=[0.01,0.1,1,10]
-    for j in val_c:
-        if i =='Class_weight':
-            lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
-        else:
-            lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
-        lr1.fit(df_final_train_v2, y_train_v2)
-        resu_lr=lr1.predict(df_final_test)
-
-        # Scores
-        print('Méthode : {} C : {}'.format(i,j))
-        acc, mat, a_u_c, f1=fc.scores(y_test,resu_lr,lr1,df_final_test)
-        resultat={'methode':i, 'C':j,'Accuracy':acc,'AUC':a_u_c,
-        'F1_score':f1,'Confusion_matrix':mat,'True Positive':mat[0,0],
-        'True Negative':mat[1,1],'False Positive': mat[0,1],
-        'False Negative': mat[1,0]}
-        tab_resultats.append(resultat)
-
-df_resultats=pd.DataFrame(tab_resultats)
-print('fini')
 df_resultats.to_csv(path+'df_resultats.csv')
 df_resultats['Taux_Faux_Negatifs']=df_resultats['False Negative']/df_resultats.iloc[:,-4:].sum(axis=1)
 df_resultats.sort_values('AUC',ascending=False)
 
+##############m,cmo,mmc######################
+df_resultats=pd.read_csv(path+'df_resultats.csv', index_col=0)
+df_resultats
 ##########" modelisation pour étude des coefficients#############"
 
 lr=LogisticRegression(max_iter=2000, C=0.01)

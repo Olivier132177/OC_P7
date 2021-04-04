@@ -6,6 +6,9 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
     ,roc_auc_score, ConfusionMatrixDisplay, plot_roc_curve\
         , plot_confusion_matrix, plot_precision_recall_curve
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.linear_model import LogisticRegression
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
@@ -389,4 +392,49 @@ def scores(y_test,resu_lr,lr,df_final_test):
     #plot_confusion_matrix(lr,df_final_test,y_test)
     #plt.show(block=False)
     return acc, mat, a_u_c, f1
+
+
+def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp):
+    result =[]
+
+    for i in meth:
+        if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
+
+            df_final_train_v2=df_final_train
+            y_train_v2=y_train
+
+        elif i=='SMOTE': # 1 SMOTE
+
+            smot=SMOTE(random_state=0)
+            df_final_train_v2, y_train_v2 = smot.fit_resample\
+                (np.array(df_final_train), np.array(y_train))
+
+        elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
+
+            rus = RandomUnderSampler(random_state=0)
+            df_final_train_v2, y_train_v2 = rus.fit_resample\
+                (np.array(df_final_train), np.array(y_train))
+
+    ## Modelisation
+    
+    for j in hyperp:
+        if i =='Class_weight':
+            lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
+        else:
+            lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
+        lr1.fit(df_final_train_v2, y_train_v2)
+        resu_lr=lr1.predict(df_final_test)
+
+        # Scores
+        print('Méthode : {} C : {}'.format(i,j))
+        acc, mat, a_u_c, f1=scores(y_test,resu_lr,lr1,df_final_test)
+        resultat={'methode':i, 'C':j,'Accuracy':acc,'AUC':a_u_c,
+        'F1_score':f1,'Confusion_matrix':mat,'True Positive':mat[0,0],
+        'True Negative':mat[1,1],'False Positive': mat[0,1],
+        'False Negative': mat[1,0]}
+        result.append(resultat)
+
+    result=pd.DataFrame(result)
+
+    return result
 
