@@ -98,10 +98,11 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
 application_final.columns
 #Test des différents hyper-paramètres
-meth=['SMOTE', 'RandomUnderSampler','Class_weight','Aucune']
+meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight']
 hyperp=[0.01,0.1,1,10]
-df_resultats,_,_,_=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
-df_resultats.to_csv(path+'df_resultats.csv')
+df_resultats,_,_,_,tab_sc=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
+
+df_resultats.to_csv(path+'df_resultats_v3.csv')
 
 df_resultats.sort_values('Recall',ascending=False)
 

@@ -8,7 +8,7 @@ from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
         , plot_confusion_matrix, plot_precision_recall_curve,auc
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
@@ -457,3 +457,64 @@ def nom_colonnes(col_cat_train,col_num_train):
         tab_nom_col.append(i)
     return tab_nom_col_cat,tab_nom_col
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+def modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graphs):
+    result =[]
+    tab_scores=[]
+    for i in meth:
+        if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
+
+            df_final_train_v2=df_final_train
+            y_train_v2=y_train
+
+        elif i=='SMOTE': # 1 SMOTE
+
+            smot=SMOTE(random_state=0)
+            df_final_train_v2, y_train_v2 = smot.fit_resample\
+                (np.array(df_final_train), np.array(y_train))
+
+        elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
+
+            rus = RandomUnderSampler(random_state=0)
+            df_final_train_v2, y_train_v2 = rus.fit_resample\
+                (np.array(df_final_train), np.array(y_train))
+    ## Modelisation
+        
+        if i =='Class_weight':
+            lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000, class_weight='balanced',cv=3, scoring='roc_auc')
+        else:
+            lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000,class_weight=None, cv=3, scoring='roc_auc')
+        lr1.fit(df_final_train_v2, y_train_v2)
+        resu_lr=lr1.predict(df_final_test)
+        proba_lr=lr1.predict_proba(df_final_test)
+
+    # Scores
+        print('Méthode : {}'.format(i))
+        acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,lr1,df_final_test, graphs)
+        resultat={'methode':i, 'Accuracy':acc,'ROC_AUC':a_u_c,
+        'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
+        'True Negative':mat[0,0],'True Positive':mat[1,1],
+        'False Positive': mat[0,1],'False Negative': mat[1,0]}
+        result.append(resultat)
+        tab_scores.append(lr1.scores_)
+    # Graphs
+
+    result=pd.DataFrame(result)
+    result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
+    result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
+
+
+    dernier_coef=lr1.coef_
+    return result, dernier_coef, proba_lr, resu_lr, tab_scores
