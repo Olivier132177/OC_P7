@@ -9,6 +9,8 @@ from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
@@ -204,8 +206,8 @@ def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENG
     B = B.merge(grp2, on = ['SK_ID_CURR'], how = 'left')
     del grp1, grp2
 
-
-#    B['OVERDUE_DEBT_RATIO'] = B['TOTAL_CUSTOMER_OVERDUE']/B['TOTAL_CUSTOMER_DEBT']
+    B['OVERDUE_DEBT_RATIO'] = B['TOTAL_CUSTOMER_OVERDUE']/B['TOTAL_CUSTOMER_DEBT']
+    B.loc[B['TOTAL_CUSTOMER_DEBT']==0,'OVERDUE_DEBT_RATIO']=0 #ajouté
 
     del B['TOTAL_CUSTOMER_OVERDUE'], B['TOTAL_CUSTOMER_DEBT']
     print('feature 9 ok')
@@ -217,7 +219,6 @@ def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENG
     print(B.shape)
     print('feature 10 ok')
     return B
-
 
 def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur Kaggle)
     df=application_train.copy()
@@ -293,7 +294,6 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
     #df.drop(drop_list,axis=1,inplace=True)
     return df
 
-
 def get_age_label(days_birth):
     """ Return the age group label (int). """
     age_years = -days_birth / 365
@@ -304,9 +304,8 @@ def get_age_label(days_birth):
     elif age_years < 99: return 5
     else: return 0
 
-
 def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
-##1ère partie
+    ##1ère partie
     feat_eng1=False
     if not feat_eng1:
         bureau=pd.read_csv(path+'bureau.csv')
@@ -316,7 +315,7 @@ def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
     else :
         bureau_avec_features=pd.read_csv(path+'bureau_avec_features.csv', index_col=0)
     print('ok 1ère partie')
-##2eme partie
+    ##2eme partie
     feat_eng2=False
     if not feat_eng2:
         application_test=pd.read_csv(path+'application_test.csv')
@@ -327,7 +326,7 @@ def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
     else :
         application=pd.read_csv(path+'application_all.csv', index_col=0)
     print('ok 2eme partie')
-##3eme partie
+    ##3eme partie
     feat_eng3=False
     if not feat_eng3:
         B2=bureau_avec_features.iloc[:,-7:-5].join(bureau_avec_features.iloc[:,-4:]).join(bureau_avec_features.iloc[:,0])
@@ -367,7 +366,6 @@ def preprocessing(col_num,col_cat, cat_col_cat):
     all_feat_ok=pd.concat([col_cat_tr,col_num_tr], axis=1)
     return all_feat_ok, ohe, ss
 
-
 def imputation_valeurs_manquantes(df,col_num, col_cat):
     sp1=SimpleImputer(strategy='mean')
     col_num2=pd.DataFrame(sp1.fit_transform(df.loc[:,col_num]))
@@ -397,55 +395,6 @@ def scores(y_test,resu_lr,proba_lr,lr,df_final_test, graphs):
         plt.show(block=False)
     return acc, mat, a_u_c, f1, auc_pr
 
-def modelisation(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graphs):
-    result =[]
-
-    for i in meth:
-        if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
-
-            df_final_train_v2=df_final_train
-            y_train_v2=y_train
-
-        elif i=='SMOTE': # 1 SMOTE
-
-            smot=SMOTE(random_state=0)
-            df_final_train_v2, y_train_v2 = smot.fit_resample\
-                (np.array(df_final_train), np.array(y_train))
-
-        elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
-
-            rus = RandomUnderSampler(random_state=0)
-            df_final_train_v2, y_train_v2 = rus.fit_resample\
-                (np.array(df_final_train), np.array(y_train))
-    ## Modelisation
-    
-        for j in hyperp:
-            if i =='Class_weight':
-                lr1=LogisticRegression(max_iter=2000, C=j,class_weight='balanced')
-            else:
-                lr1=LogisticRegression(max_iter=2000, C=j,class_weight=None)
-            lr1.fit(df_final_train_v2, y_train_v2)
-            resu_lr=lr1.predict(df_final_test)
-            proba_lr=lr1.predict_proba(df_final_test)
-
-        # Scores
-            print('Méthode : {} C : {}'.format(i,j))
-            acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,lr1,df_final_test, graphs)
-            resultat={'methode':i, 'C':j,'Accuracy':acc,'ROC_AUC':a_u_c,
-            'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
-            'True Negative':mat[0,0],'True Positive':mat[1,1],
-            'False Positive': mat[0,1],'False Negative': mat[1,0]}
-            result.append(resultat)
-        # Graphs
-
-    result=pd.DataFrame(result)
-    result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
-    result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
-
-
-    dernier_coef=lr1.coef_
-    return result, dernier_coef, proba_lr, resu_lr
-
 def nom_colonnes(col_cat_train,col_num_train):
     tab_nom_col_cat=[]
     tab_nom_col=[]
@@ -457,45 +406,33 @@ def nom_colonnes(col_cat_train,col_num_train):
         tab_nom_col.append(i)
     return tab_nom_col_cat,tab_nom_col
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 def modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graphs):
     result =[]
     tab_scores=[]
+    
     for i in meth:
-        if ((i=='Aucune')|(i=='Class_weight')): # 0 Aucune action
-
-            df_final_train_v2=df_final_train
-            y_train_v2=y_train
-
-        elif i=='SMOTE': # 1 SMOTE
-
+        if i=='SMOTE': # 1 SMOTE
             smot=SMOTE(random_state=0)
             df_final_train_v2, y_train_v2 = smot.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
 
         elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
-
             rus = RandomUnderSampler(random_state=0)
             df_final_train_v2, y_train_v2 = rus.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
+        
+        else : #Aucune \ Class_weight
+            df_final_train_v2=df_final_train
+            y_train_v2=y_train
+
     ## Modelisation
         
         if i =='Class_weight':
             lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000, class_weight='balanced',cv=3, scoring='roc_auc')
-        else:
+        elif i!='RandomForest':
             lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000,class_weight=None, cv=3, scoring='roc_auc')
+        else:
+            lr1=RandomForestClassifier()
         lr1.fit(df_final_train_v2, y_train_v2)
         resu_lr=lr1.predict(df_final_test)
         proba_lr=lr1.predict_proba(df_final_test)

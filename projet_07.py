@@ -15,6 +15,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split,GridSearchCV
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
+from sklearn.ensemble import RandomForestClassifier
 
 pd.set_option('display.max_columns', 40)
 pd.set_option('display.max_rows', 150)
@@ -39,6 +40,7 @@ if not deja_fait:
 
 ##################### suppression des variables inutiles ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0)
+
 variables_supprimees=['AGE_RANGE','APARTMENTS_MEDI','YEARS_BUILD_MODE','SK_ID_CURR']
 
 variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_START',
@@ -98,19 +100,21 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
 application_final.columns
 #Test des différents hyper-paramètres
-meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight']
+meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight','RandomForest']
 hyperp=[0.01,0.1,1,10]
 df_resultats,_,_,_,tab_sc=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
 
 df_resultats.to_csv(path+'df_resultats_v3.csv')
 
+df_resultats
+tab_sc
 df_resultats.sort_values('Recall',ascending=False)
 
 df_resultats.loc[15]
 ############## modelisation avec des paramètres sélectionnés ######################
 meth2=['Class_weight']
 hyperp2=[0.01]
-df_resultats2,coefs,prob,clas=fc.modelisation(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
+df_resultats2,coefs,prob,clas=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
 
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01
