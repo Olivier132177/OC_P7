@@ -36,8 +36,8 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 #feature engeneering
 deja_fait=True
 if not deja_fait:
-    fc.feature_engineering(path,False,False,False)
-
+    fc.feature_engineering(path,True,True,True)
+print('tout fini')
 ##################### suppression des variables inutiles ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0)
 
@@ -100,14 +100,12 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
 application_final.columns
 #Test des différents hyper-paramètres
-meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight','RandomForest']
-hyperp=[0.01,0.1,1,10]
-df_resultats,_,_,_,tab_sc=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp,False)
+meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight']
+algo=['RF'] #LR RF
+df_resultats,_,_=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,False)
 
 df_resultats.to_csv(path+'df_resultats_v3.csv')
-
 df_resultats
-tab_sc
 df_resultats.sort_values('Recall',ascending=False)
 
 df_resultats.loc[15]

@@ -13,6 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
+#1ere partie du feature engeneering
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
     B = bureau
     grp = B[['SK_ID_CURR', 'DAYS_CREDIT']].groupby(by = ['SK_ID_CURR'])['DAYS_CREDIT'].count().reset_index().rename(index=str, columns={'DAYS_CREDIT': 'BUREAU_LOAN_COUNT'})
@@ -221,6 +222,7 @@ def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENG
     return B
 
 def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur Kaggle)
+#2eme partie du feature engeneering
     df=application_train.copy()
     df=df.append(application_test)
 
@@ -306,7 +308,6 @@ def get_age_label(days_birth):
 
 def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
     ##1ère partie
-    feat_eng1=False
     if not feat_eng1:
         bureau=pd.read_csv(path+'bureau.csv')
         B=create_bureau_features(bureau) #creation de 10 features
@@ -316,7 +317,6 @@ def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
         bureau_avec_features=pd.read_csv(path+'bureau_avec_features.csv', index_col=0)
     print('ok 1ère partie')
     ##2eme partie
-    feat_eng2=False
     if not feat_eng2:
         application_test=pd.read_csv(path+'application_test.csv')
         application_train=pd.read_csv(path+'application_train.csv')
@@ -327,9 +327,8 @@ def feature_engineering(path, feat_eng1,feat_eng2,feat_eng3):
         application=pd.read_csv(path+'application_all.csv', index_col=0)
     print('ok 2eme partie')
     ##3eme partie
-    feat_eng3=False
     if not feat_eng3:
-        B2=bureau_avec_features.iloc[:,-7:-5].join(bureau_avec_features.iloc[:,-4:]).join(bureau_avec_features.iloc[:,0])
+        B2=bureau_avec_features.iloc[:,-8:-6].join(bureau_avec_features.iloc[:,-5:]).join(bureau_avec_features.iloc[:,0])
         B2=B2.drop_duplicates()
         del bureau_avec_features
         print('ok1')
@@ -406,17 +405,21 @@ def nom_colonnes(col_cat_train,col_num_train):
         tab_nom_col.append(i)
     return tab_nom_col_cat,tab_nom_col
 
-def modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp, graphs):
+def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
     result =[]
-    tab_scores=[]
-    
-    for i in meth:
-        if i=='SMOTE': # 1 SMOTE
+
+    if meth =='Class_weight':
+        cw='balanced'
+    else:
+        cw=None
+
+    for i in meth: # Undersampling / Oversampling du dataset
+        if meth=='SMOTE': # 1 SMOTE
             smot=SMOTE(random_state=0)
             df_final_train_v2, y_train_v2 = smot.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
 
-        elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
+        elif meth=='RandomUnderSampler':  # 2 RandomUnderSampler
             rus = RandomUnderSampler(random_state=0)
             df_final_train_v2, y_train_v2 = rus.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
@@ -425,33 +428,31 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth, hyperp, grap
             df_final_train_v2=df_final_train
             y_train_v2=y_train
 
-    ## Modelisation
-        
-        if i =='Class_weight':
-            lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000, class_weight='balanced',cv=3, scoring='roc_auc')
-        elif i!='RandomForest':
-            lr1=LogisticRegressionCV(Cs=hyperp,max_iter=2000,class_weight=None, cv=3, scoring='roc_auc')
-        else:
-            lr1=RandomForestClassifier()
-        lr1.fit(df_final_train_v2, y_train_v2)
-        resu_lr=lr1.predict(df_final_test)
-        proba_lr=lr1.predict_proba(df_final_test)
+    for j in algo : #modelisation
+        if j=='LR':
+            est=LogisticRegression(max_iter=2000, class_weight=cw)
+            param={'C':[0.01,0.1,1,10]}
+        elif j=='RF':
+            est=RandomForestClassifier(class_weight=cw)
+            param={'n_estimators':[100]}
+        gs=GridSearchCV(est,param,cv=3, scoring='roc_auc')
+
+        gs.fit(df_final_train_v2, y_train_v2)
+        resu_lr=gs.predict(df_final_test)
+        proba_lr=gs.predict_proba(df_final_test)
 
     # Scores
-        print('Méthode : {}'.format(i))
-        acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,lr1,df_final_test, graphs)
-        resultat={'methode':i, 'Accuracy':acc,'ROC_AUC':a_u_c,
-        'Precision_Recall_AUC' : roc_pr,'F1_score':f1,'Confusion_matrix':mat,
-        'True Negative':mat[0,0],'True Positive':mat[1,1],
+        print('Méthode : {}\nAlgo : {}'.format(i,j))
+        acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs)
+        resultat={'algo':algo,'methode':i, 'Best_params':gs.best_params_,'Accuracy':acc,
+        'ROC_AUC':a_u_c,'Precision_Recall_AUC' : roc_pr,'F1_score':f1,
+        'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
         'False Positive': mat[0,1],'False Negative': mat[1,0]}
         result.append(resultat)
-        tab_scores.append(lr1.scores_)
     # Graphs
 
     result=pd.DataFrame(result)
     result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
     result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
 
-
-    dernier_coef=lr1.coef_
-    return result, dernier_coef, proba_lr, resu_lr, tab_scores
+    return result, proba_lr, resu_lr
