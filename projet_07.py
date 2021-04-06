@@ -101,7 +101,7 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 application_final.columns
 #Test des différents hyper-paramètres
 meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight']
-algo=['RF'] #LR RF
+algo=['RF','LR'] #LR RF
 df_resultats,_,_=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,False)
 
 df_resultats.to_csv(path+'df_resultats_v3.csv')

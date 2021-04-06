@@ -407,49 +407,48 @@ def nom_colonnes(col_cat_train,col_num_train):
 
 def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
     result =[]
-
-    if meth =='Class_weight':
-        cw='balanced'
-    else:
-        cw=None
-
     for i in meth: # Undersampling / Oversampling du dataset
         if meth=='SMOTE': # 1 SMOTE
             smot=SMOTE(random_state=0)
             df_final_train_v2, y_train_v2 = smot.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
-
         elif meth=='RandomUnderSampler':  # 2 RandomUnderSampler
             rus = RandomUnderSampler(random_state=0)
             df_final_train_v2, y_train_v2 = rus.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
-        
         else : #Aucune \ Class_weight
             df_final_train_v2=df_final_train
             y_train_v2=y_train
+    
+        if meth =='Class_weight':
+            cw='balanced'
+        else:
+            cw=None
 
-    for j in algo : #modelisation
-        if j=='LR':
-            est=LogisticRegression(max_iter=2000, class_weight=cw)
-            param={'C':[0.01,0.1,1,10]}
-        elif j=='RF':
-            est=RandomForestClassifier(class_weight=cw)
-            param={'n_estimators':[100]}
-        gs=GridSearchCV(est,param,cv=3, scoring='roc_auc')
-
-        gs.fit(df_final_train_v2, y_train_v2)
-        resu_lr=gs.predict(df_final_test)
-        proba_lr=gs.predict_proba(df_final_test)
-
-    # Scores
-        print('Méthode : {}\nAlgo : {}'.format(i,j))
-        acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs)
-        resultat={'algo':algo,'methode':i, 'Best_params':gs.best_params_,'Accuracy':acc,
-        'ROC_AUC':a_u_c,'Precision_Recall_AUC' : roc_pr,'F1_score':f1,
-        'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
-        'False Positive': mat[0,1],'False Negative': mat[1,0]}
-        result.append(resultat)
-    # Graphs
+        for j in algo : #modelisation
+            if j=='LR':
+                lr1=LogisticRegression(max_iter=2000, class_weight=cw,random_state=0)
+                param={'C':[0.01,0.1,1,10]}
+                gs=GridSearchCV(lr1,param,cv=3, scoring='roc_auc')
+                gs.fit(df_final_train_v2, y_train_v2)
+                resu_lr=gs.predict(df_final_test)
+                proba_lr=gs.predict_proba(df_final_test)
+                best_params=gs.best_params_
+            elif j=='RF':
+                est=RandomForestClassifier(class_weight=cw, random_state=0, n_estimators=500)
+                est.fit(df_final_train_v2, y_train_v2)
+                resu_lr=est.predict(df_final_test)
+                proba_lr=est.predict_proba(df_final_test)
+                best_params=0
+        # Scores
+                print('Méthode : {}\nAlgo : {}'.format(i,j))
+                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
+                resultat={'algo':algo,'methode':i, 'Best_params':best_params,'Accuracy':acc,
+                'ROC_AUC':a_u_c,'Precision_Recall_AUC' : roc_pr,'F1_score':f1,
+                'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
+                'False Positive': mat[0,1],'False Negative': mat[1,0]}
+                result.append(resultat)
+            # Graphs
 
     result=pd.DataFrame(result)
     result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
