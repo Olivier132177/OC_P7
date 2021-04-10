@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
         , plot_confusion_matrix, plot_precision_recall_curve,auc
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split,GridSearchCV
-from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import SMOTE,RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
 from sklearn.ensemble import RandomForestClassifier
 
@@ -100,12 +100,15 @@ tab_nom_col_cat,tab_nom_col=fc.nom_colonnes(col_cat_train,col_num_train)
 
 application_final.columns
 #Test des différents hyper-paramètres
-meth=['Aucune','SMOTE', 'RandomUnderSampler','Class_weight']
-algo=['RF','LR'] #LR RF
+meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
+algo=['RF','LR'] 
 df_resultats,_,_=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,False)
 
-df_resultats.to_csv(path+'df_resultats_v3.csv')
-df_resultats
+
+#############
+
+df_resultats.to_csv(path+'df_resultats.csv')
+
 df_resultats.sort_values('Recall',ascending=False)
 
 df_resultats.loc[15]
@@ -113,6 +116,7 @@ df_resultats.loc[15]
 meth2=['Class_weight']
 hyperp2=[0.01]
 df_resultats2,coefs,prob,clas=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth2, hyperp2,True)
+
 
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01

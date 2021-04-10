@@ -36,3 +36,7 @@ TEST*.xml
 *.flv
 *.mov
 *.wmv
+
+app.py
+tuto_dash.py
+test.py

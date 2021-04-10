@@ -375,22 +375,22 @@ def imputation_valeurs_manquantes(df,col_num, col_cat):
     col_cat2.columns=col_cat
     return col_num2, col_cat2
 
-def scores(y_test,resu_lr,proba_lr,lr,df_final_test, graphs):
-    f1=f1_score(y_test,resu_lr)
-    acc =accuracy_score(y_test,resu_lr)
-    mat=confusion_matrix(y_test,resu_lr)
-    a_u_c=roc_auc_score(y_test,proba_lr.T[1])
-    pre,rec,thr = precision_recall_curve(y_test,proba_lr.T[1]) 
+def scores(y_test,resu,proba,mod,df_final_test, graphs):
+    f1=f1_score(y_test,resu)
+    acc =accuracy_score(y_test,resu)
+    mat=confusion_matrix(y_test,resu)
+    a_u_c=roc_auc_score(y_test,proba.T[1])
+    pre,rec,thr = precision_recall_curve(y_test,proba.T[1]) 
     auc_pr=auc(rec,pre)
     print('Matrice de confusion :{}'.format(mat)) 
     print('Accuracy : {} ROC AUC : {} AUC Precision-Recall : {} F1 : {}\n'\
         .format(round(acc,3),round(a_u_c,3),round(auc_pr,3),round(f1,3)))
     if graphs==True:
-        plot_roc_curve(lr,df_final_test,y_test)
+        plot_roc_curve(mod,df_final_test,y_test)
         plt.show(block=False)
-        plot_precision_recall_curve(lr,df_final_test,y_test)
+        plot_precision_recall_curve(mod,df_final_test,y_test)
         plt.show(block=False)
-        plot_confusion_matrix(lr,df_final_test,y_test)
+        plot_confusion_matrix(mod,df_final_test,y_test)
         plt.show(block=False)
     return acc, mat, a_u_c, f1, auc_pr
 
@@ -408,11 +408,11 @@ def nom_colonnes(col_cat_train,col_num_train):
 def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
     result =[]
     for i in meth: # Undersampling / Oversampling du dataset
-        if meth=='SMOTE': # 1 SMOTE
+        if i=='SMOTE': # 1 SMOTE
             smot=SMOTE(random_state=0)
             df_final_train_v2, y_train_v2 = smot.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
-        elif meth=='RandomUnderSampler':  # 2 RandomUnderSampler
+        elif i=='RandomUnderSampler':  # 2 RandomUnderSampler
             rus = RandomUnderSampler(random_state=0)
             df_final_train_v2, y_train_v2 = rus.fit_resample\
                 (np.array(df_final_train), np.array(y_train))
@@ -420,12 +420,13 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
             df_final_train_v2=df_final_train
             y_train_v2=y_train
     
-        if meth =='Class_weight':
+        if i =='Class_weight':
             cw='balanced'
         else:
             cw=None
 
         for j in algo : #modelisation
+            print('Méthode : {}\nAlgo : {}'.format(i,j))
             if j=='LR':
                 lr1=LogisticRegression(max_iter=2000, class_weight=cw,random_state=0)
                 param={'C':[0.01,0.1,1,10]}
@@ -434,20 +435,22 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
                 resu_lr=gs.predict(df_final_test)
                 proba_lr=gs.predict_proba(df_final_test)
                 best_params=gs.best_params_
+                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
             elif j=='RF':
                 est=RandomForestClassifier(class_weight=cw, random_state=0, n_estimators=500)
                 est.fit(df_final_train_v2, y_train_v2)
-                resu_lr=est.predict(df_final_test)
-                proba_lr=est.predict_proba(df_final_test)
+                resu_rf=est.predict(df_final_test)
+                proba_rf=est.predict_proba(df_final_test)
                 best_params=0
+                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_rf,proba_rf,est,df_final_test, graphs) 
         # Scores
-                print('Méthode : {}\nAlgo : {}'.format(i,j))
-                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
-                resultat={'algo':algo,'methode':i, 'Best_params':best_params,'Accuracy':acc,
-                'ROC_AUC':a_u_c,'Precision_Recall_AUC' : roc_pr,'F1_score':f1,
-                'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
-                'False Positive': mat[0,1],'False Negative': mat[1,0]}
-                result.append(resultat)
+            
+            
+            resultat={'algo':j,'methode':i, 'Best_params':best_params,'Accuracy':acc,
+            'ROC_AUC':a_u_c,'Precision_Recall_AUC' : roc_pr,'F1_score':f1,
+            'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
+            'False Positive': mat[0,1],'False Negative': mat[1,0]}
+            result.append(resultat)
             # Graphs
 
     result=pd.DataFrame(result)
