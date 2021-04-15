@@ -405,7 +405,7 @@ def nom_colonnes(col_cat_train,col_num_train):
         tab_nom_col.append(i)
     return tab_nom_col_cat,tab_nom_col
 
-def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
+def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,graphs):
     result =[]
     for i in meth: # Undersampling / Oversampling du dataset
         if i=='SMOTE': # 1 SMOTE
@@ -429,12 +429,13 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
             print('Méthode : {}\nAlgo : {}'.format(i,j))
             if j=='LR':
                 lr1=LogisticRegression(max_iter=2000, class_weight=cw,random_state=0)
-                param={'C':[0.01,0.1,1,10]}
+                param={'C':param_c}
                 gs=GridSearchCV(lr1,param,cv=3, scoring='roc_auc')
                 gs.fit(df_final_train_v2, y_train_v2)
                 resu_lr=gs.predict(df_final_test)
                 proba_lr=gs.predict_proba(df_final_test)
                 best_params=gs.best_params_
+                
                 acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
             elif j=='RF':
                 est=RandomForestClassifier(class_weight=cw, random_state=0, n_estimators=500)
@@ -458,3 +459,38 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,graphs):
     result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
 
     return result, proba_lr, resu_lr
+
+def score_par_seuil(y_test,y_pred,seuil):
+    tab_res=pd.DataFrame()
+    for i in range(len(seuil)):
+        valcol=[1 if n[1]>(seuil[i]/100) else 0 for n in y_pred]
+        nomcol='pred_{}'.format(seuil[i])
+        resul=pd.Series(valcol)
+        resul.name=nomcol
+        tab_res=tab_res.append(resul)
+    tab_res=tab_res.T
+    tab_res['TARGET']=y_test.values
+
+    df_resu=[]
+
+    for i in range(len(seuil)):
+        confu=confusion_matrix(tab_res.iloc[:,-1],tab_res.iloc[:,i])
+        tp=confu[1][1]
+        tn=confu[0][0]
+        fp=confu[0][1]
+        fn=confu[1][0]
+        resu={'Confusion_matrix':confu,'TP':tp,'TN':tn,'FP':fp,'FN':fn}
+        df_resu.append(resu)
+    df_resu=pd.DataFrame(df_resu)
+    df_resu.index=seuil
+    df_resu['Recall']=df_resu['TP']/(df_resu['TP']+df_resu['FN'])
+    df_resu['Precision']=df_resu['TP']/(df_resu['TP']+df_resu['FP'])
+    df_resu['Accuracy']=(df_resu['TP']+df_resu['TN'])/(df_resu['TP']+df_resu['FP']+df_resu['FN']+df_resu['TN'])
+    df_resu['F1']=(2 * df_resu['Precision'] * df_resu['Recall']) / (df_resu['Precision'] + df_resu['Recall'])
+    df_resu.sort_values('F1', ascending=False)
+    a_u_c=roc_auc_score(y_test,y_pred.T[1])
+    pre,rec,_ = precision_recall_curve(y_test,y_pred.T[1]) 
+    auc_pr=auc(rec,pre)
+
+    
+    return tab_res,df_resu,a_u_c,auc_pr
