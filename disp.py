@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import dash
 import dash_table
 
-
+#test
 application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
 application_final['AGE']=application_final['DAYS_BIRTH_x']//365.25
 application_numbers=application_final.index[:50]
