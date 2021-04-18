@@ -13,7 +13,10 @@ import dash_table
 application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
 application_final['AGE']=application_final['DAYS_BIRTH_x']//365.25
 application_numbers=application_final.index[:50]
-application_final.iloc[2]
+
+coeff=pd.read_csv('data/coefficients.csv', index_col=0)
+df_prep=pd.read_csv('data/df_test_prep.csv', index_col=0)
+
 df_minmaxmoy=pd.read_csv('data/df_minmaxmoy.csv',index_col=0)
 for i in df_minmaxmoy.columns:
     df_minmaxmoy[i]=df_minmaxmoy[i].apply(lambda x : round(x,2))
@@ -26,7 +29,7 @@ selec=['AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE',
        'ACTIVE_LOANS_PERCENTAGE',
        'AVG_ENDDATE_FUTURE', 'DEBT_CREDIT_RATIO', 'OVERDUE_DEBT_RATIO',
        'AVG_CREDITDAYS_PROLONGED']
-df_minmaxmoy2=df_minmaxmoy.loc[selec]
+df_minmaxmoy2=df_minmaxmoy.loc[selec] # avec uniquement les variables sélectionnées
 df_minmaxmoy2=df_minmaxmoy2.reset_index().rename(columns={'index':'variables'})
 
 col_table=['variables', 'client','moyenne','ecart_type','minimum','maximum','mediane']
@@ -61,8 +64,8 @@ def camembert(variable,ind, titre):
 
 ############
 def jauge(variable, ind,titre):
-    val_min=round(application_final[variable].min()*100,1)
-    val_max=round(application_final[variable].max()*100,1)
+    #val_min=round(application_final[variable].min()*100,1)
+    #val_max=round(application_final[variable].max()*100,1)
     #val_med=round(application_final[variable].median()*100,1)
     if ind:
         val=round(application_final.loc[ind,variable]*100,1)

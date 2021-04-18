@@ -63,7 +63,8 @@ variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_ST
             'FONDKAPREMONT_MODE', 'EMERGENCYSTATE_MODE'   ,'OWN_CAR_AGE','CAR_TO_EMPLOYED_RATIO', 
             'CAR_TO_BIRTH_RATIO', 'EXT_SOURCES_PROD', 'APARTMENTS_AVG', 'APARTMENTS_MODE',
             'APARTMENTS_MEDI','ENTRANCES_AVG', 'ENTRANCES_MEDI', 'LIVINGAREA_AVG', 'FLOORSMAX_MEDI', 
-            'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE']
+            'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE',
+            'EXT_SOURCE_1_y','EXT_SOURCE_2_y','EXT_SOURCE_3_y','DAYS_BIRTH_y']
 
 meilleures_variables=['TARGET','INCOME_TO_BIRTH_RATIO','AMT_INCOME_TOTAL',
 'ORGANIZATION_TYPE','AMT_GOODS_PRICE','AMT_CREDIT','CREDIT_TERM','FLAG_DOCUMENT_13',
@@ -117,6 +118,7 @@ y_test=pd.read_csv(path+'y_test.csv', index_col=0)
 y_train=pd.read_csv(path+'y_train.csv', index_col=0)
 
 
+np.sort(df_final_test.columns.to_list())
 
 # ###########""
 
@@ -140,47 +142,36 @@ lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
 
+acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=True)
+
 df_final_test_pred=X_test.copy()
 df_final_test_pred['y_pred']=y_prob
 df_final_test_pred.to_csv(path+'df_pour_dashboard.csv')
 
 df_final_test.index=X_test.index
+df_final_test.to_csv(path+'df_test_prep.csv')
 
 coefs=lr2.coef_
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Nom_colonne','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
 df_coef=df_coef.set_index('Nom_colonne')
+#df_coef.index==df_final_test.columns
+df_coef.to_csv(path+'coefficients.csv')
 
-df_coef.index==df_final_test.columns
 df_final_test
-df_final_test.iloc[0]
-df_coef[['Coef']]
 inter_coef=df_coef[['Coef']].join(df_final_test.iloc[0])
 inter_coef.columns=['Coef','Value']
 inter_coef['impact']=inter_coef['Coef']*inter_coef['Value']
 inter_coef.sort_values('impact')
+
+df_minmaxmoy=pd.concat([test_set[col_num].mean(),test_set[col_num].std(),test_set[col_num].min(),
+test_set[col_num].max(),test_set[col_num].median()],axis=1)
+df_minmaxmoy.columns=['moyenne','ecart_type','minimum','maximum','mediane']
+df_minmaxmoy.to_csv(path+'df_minmaxmoy.csv')
 
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01
 #Matrice de confusion :[[42262 18518]
 # [ 1590  3502]]
 #Accuracy : 0.695 ROC AUC : 0.758 AUC Precision-Recall : 0.237 F1 : 0.258
-
-#étude des coefficients
-
-resultatsf=pd.read_csv(path+'resultats_finaux.csv')
-resultatsf
-df_coef.to_csv(path+'coefficients.csv')
-
-len(tab_nom_col)
-inter_coef['impact'].sum()
-
-df_minmaxmoy=pd.concat([test_set[col_num].mean(),test_set[col_num].std(),test_set[col_num].min(),
-test_set[col_num].max(),test_set[col_num].median()],axis=1)
-df_minmaxmoy.columns=['moyenne','ecart_type','minimum','maximum','mediane']
-df_minmaxmoy.to_csv(path+'df_minmaxmoy.csv')
-#100001
-# test_set.iloc[5]
-
-pd.concat([df_minmaxmoy,test_set.loc[100001,col_num]], axis=1)

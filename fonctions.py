@@ -379,8 +379,8 @@ def scores(y_test,resu,proba,mod,df_final_test, graphs):
     f1=f1_score(y_test,resu)
     acc =accuracy_score(y_test,resu)
     mat=confusion_matrix(y_test,resu)
-    a_u_c=roc_auc_score(y_test,proba.T[1])
-    pre,rec,thr = precision_recall_curve(y_test,proba.T[1]) 
+    a_u_c=roc_auc_score(y_test,proba)
+    pre,rec,thr = precision_recall_curve(y_test,proba) 
     auc_pr=auc(rec,pre)
     print('Matrice de confusion :{}'.format(mat)) 
     print('Accuracy : {} ROC AUC : {} AUC Precision-Recall : {} F1 : {}\n'\
@@ -433,7 +433,7 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,
                 gs=GridSearchCV(lr1,param,cv=3, scoring='roc_auc')
                 gs.fit(df_final_train_v2, y_train_v2)
                 resu_lr=gs.predict(df_final_test)
-                proba_lr=gs.predict_proba(df_final_test)
+                proba_lr=(gs.predict_proba(df_final_test)).T[1]
                 best_params=gs.best_params_
                 
                 acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
@@ -441,7 +441,7 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,
                 est=RandomForestClassifier(class_weight=cw, random_state=0, n_estimators=500)
                 est.fit(df_final_train_v2, y_train_v2)
                 resu_rf=est.predict(df_final_test)
-                proba_rf=est.predict_proba(df_final_test)
+                proba_rf=(est.predict_proba(df_final_test)).T[1]
                 best_params=0
                 acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_rf,proba_rf,est,df_final_test, graphs) 
         # Scores
