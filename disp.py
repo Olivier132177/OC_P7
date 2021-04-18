@@ -9,6 +9,8 @@ import plotly.graph_objects as go
 import dash
 import dash_table
 
+app2 = dash.Dash(__name__)
+
 #test
 application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
 application_final['AGE']=application_final['DAYS_BIRTH_x']//365.25
@@ -34,7 +36,19 @@ df_minmaxmoy2=df_minmaxmoy2.reset_index().rename(columns={'index':'variables'})
 
 col_table=['variables', 'client','moyenne','ecart_type','minimum','maximum','mediane']
 
-app2 = dash.Dash(__name__)
+fig_neg=px.bar()
+fig_pos=px.bar()
+
+def impact_coef(ind,coeff):
+    coeff['donnees_client']=df_prep.loc[ind]
+    coeff['Impact']=coeff['donnees_client']*coeff['Coef']
+    c_neg=coeff.sort_values('Impact').iloc[:5]
+    c_pos=coeff.sort_values('Impact',ascending=False).iloc[:5]
+    fig_neg = px.bar(c_neg, x=c_neg.index, y='Impact', color_discrete_sequence=['lime'])
+    fig_pos = px.bar(c_pos, x=c_pos.index, y='Impact', color_discrete_sequence=['red'])
+    scor= coeff['Impact'].sum()
+    return coeff, fig_neg,fig_pos,scor
+
 
 def tableau_comp(inde):
     donnees_client=application_final.loc[inde]
@@ -47,20 +61,6 @@ def tableau_comp(inde):
         nouv_tabl[i]=nouv_tabl[i].astype('str')
     return nouv_tabl.to_dict('records')
 
-def camembert(variable,ind, titre):
-    donnees=application_final[variable].value_counts() 
-    labels=donnees.index
-    values=donnees.values
-    if ind:
-        cat=application_final.loc[ind,variable]
-    else:
-        cat=''
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, textinfo='label+percent',
-                             insidetextorientation='radial'
-                            )])
-    fig.update_layout(title_text=' {}: {}'.format(titre,cat))
-    fig.update_layout(paper_bgcolor="LightSteelBlue")
-    return fig
 
 ############
 def jauge(variable, ind,titre):
@@ -135,19 +135,19 @@ app2.layout=html.Div([ #bloc principal
                                     #dcc.Dropdown(id='liste-derou_gauche',
                                     #    options=[{'label': i, 'value': i} for i in application_numbers]),
                                     dash_table.DataTable(id='table',columns=[{"name": i, "id": i} for i in col_table])
-                                    ],style={'background-color':'gray','width':'40%'}), #partie de gauche
+                                    ],style={'background-color':'wheat','width':'40%'}), #partie de gauche
                             html.Div([
-                                    html.H3("Points positifs du dossier")
-                                    #dcc.Dropdown(id='liste-derou_centre',
-                                    #    options=[{'label': i, 'value': i} for i in application_numbers])
-                                    ],style={'background-color':'lime','width':'30%'}), #partie centrale
-                            html.Div([
-                                    html.H3('Points négatifs du dossier')
-                                    #dcc.Dropdown(id='liste-derou_droite',
-                                    #    options=[{'label': i, 'value': i} for i in application_numbers])
-                                    ],style={'background-color':'brown','width':'30%'}) #partie de droite
-                                ],style={'background-color':'yellow','display':'flex','height':700}
-                                )
+                                    html.H3("Score du dossier : ", id='score_dossier'),
+                                    html.Div([
+                                            html.H4('TOP 5 points negatifs'),
+                                            dcc.Graph(id='positif',figure=fig_pos,style={'height':280})
+                                            ]),
+                                    html.Div([
+                                            html.H4('TOP 5 points positifs'),
+                                            dcc.Graph(id='negatif',figure=fig_neg,style={'height':280})
+                                            ]),
+                                    ],style={'background-color':'wheat','width':'60%'}) #partie centre-droit
+                                ],style={'background-color':'yellow','display':'flex','height':700})
                         ])
 
 
@@ -167,6 +167,9 @@ app2.layout=html.Div([ #bloc principal
     Output('profession','children'),
     Output('revenus','children'),
     Output('table','data'),
+    Output('negatif','figure'),
+    Output('positif','figure'),
+    Output('score_dossier','children'),    
     Input('liste-derou', 'value')
             )
 def update_output_div(ind):
@@ -188,7 +191,9 @@ def update_output_div(ind):
         txt10='Profession : {}'.format(application_final.loc[ind,'OCCUPATION_TYPE'])
         txt11='Revenus : {}$ / an'.format(application_final.loc[ind,'AMT_INCOME_TOTAL'])
         tabl1=tableau_comp(ind)
-
+        _,tneg,tpos,_=impact_coef(ind,coeff)
+        scor=np.log(application_final.loc[ind,'y_pred']/(1-application_final.loc[ind,'y_pred']))
+        txt12='Score du dossier : {}'.format(round(scor,3))
     else:
         fig1=jauge('y_pred',ind=False,titre='Risque de défaut de paiement :')
         txt1=''
@@ -202,8 +207,12 @@ def update_output_div(ind):
         txt9=''
         txt10=''
         txt11=''
+        txt12=' Score du dossier :'
         tabl1=[]
-    return fig1,txt1,txt2,txt3,txt4,txt5,txt6,txt7,txt8,txt9,txt10,txt11,tabl1
+        tneg=px.bar()
+        tpos=px.bar()
+        
+    return fig1,txt1,txt2,txt3,txt4,txt5,txt6,txt7,txt8,txt9,txt10,txt11,tabl1,tneg,tpos,txt12
 
 if __name__ == '__main__':
     app2.run_server(debug=True)

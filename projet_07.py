@@ -153,17 +153,43 @@ df_final_test.to_csv(path+'df_test_prep.csv')
 
 coefs=lr2.coef_
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
-df_coef.columns=['Nom_colonne','Coef']
+df_coef.columns=['Variables','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
-df_coef=df_coef.set_index('Nom_colonne')
+df_coef=df_coef.set_index('Variables')
 #df_coef.index==df_final_test.columns
 df_coef.to_csv(path+'coefficients.csv')
 
-df_final_test
-inter_coef=df_coef[['Coef']].join(df_final_test.iloc[0])
+inter=lr2.intercept_[0]
+
+#398172
+#412932
+#135480
+
+iden=412932
+
+pred=df_final_test_pred.loc[iden,'y_pred']
+inter_coef=df_coef[['Coef']].join(df_final_test.loc[iden])
 inter_coef.columns=['Coef','Value']
 inter_coef['impact']=inter_coef['Coef']*inter_coef['Value']
-inter_coef.sort_values('impact')
+impa=inter_coef['impact'].sum()
+
+print(pred,'',impa)
+
+impa #-0.94 somme des coefs
+inter #-0.74 intercept
+impa+inter # log de la cote du label "1" :-1.68
+np.exp(impa+inter) #cote du label "1" 0.19
+# coef : contribution au log du rapport de cotes
+np.exp(impa) #0.39
+np.exp(inter) #0.48
+np.exp(impa)*np.exp(inter) #0.19
+
+pred #0.16
+pred/(1-pred) #cote : 0.19
+#pred=0.19*(1-pred)
+#pred=0.19-pred*0.19
+np.log(pred/(1-pred)) #log du rapport de cotes -1.68
+
 
 df_minmaxmoy=pd.concat([test_set[col_num].mean(),test_set[col_num].std(),test_set[col_num].min(),
 test_set[col_num].max(),test_set[col_num].median()],axis=1)
