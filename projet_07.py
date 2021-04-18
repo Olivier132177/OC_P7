@@ -80,7 +80,7 @@ elif not ajout:
     application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees, invert=True)]
     application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees_2, invert=True)]
 colonnes_retenues=application_final.columns
-application_final
+
 #séparation du train set et du test set, recuperation des noms de colonnes
 train_set,test_set,label,col_cat,col_num,features = fc.preparation_df(application_final)
 
@@ -139,20 +139,28 @@ lr2=LogisticRegression(max_iter=2000, class_weight='balanced',random_state=0, C=
 lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
+
 df_final_test_pred=X_test.copy()
 df_final_test_pred['y_pred']=y_prob
 df_final_test_pred.to_csv(path+'df_pour_dashboard.csv')
 
-coefs=lr2.coef_
+df_final_test.index=X_test.index
 
+coefs=lr2.coef_
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Nom_colonne','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
-df_coef=df_coef.sort_values('AbsCoef',ascending=False)
-df_coef=df_coef.sort_values('Coef',ascending=False)
+df_coef=df_coef.set_index('Nom_colonne')
 
-df_coef.iloc[-60:]
-df_coef
+df_coef.index==df_final_test.columns
+df_final_test
+df_final_test.iloc[0]
+df_coef[['Coef']]
+inter_coef=df_coef[['Coef']].join(df_final_test.iloc[0])
+inter_coef.columns=['Coef','Value']
+inter_coef['impact']=inter_coef['Coef']*inter_coef['Value']
+inter_coef.sort_values('impact')
+
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01
 #Matrice de confusion :[[42262 18518]
@@ -166,18 +174,13 @@ resultatsf
 df_coef.to_csv(path+'coefficients.csv')
 
 len(tab_nom_col)
+inter_coef['impact'].sum()
 
-df_final_train.columns=tab_nom_col
-df_final_train['DAYS_EMPLOYED'].describe()
+df_minmaxmoy=pd.concat([test_set[col_num].mean(),test_set[col_num].std(),test_set[col_num].min(),
+test_set[col_num].max(),test_set[col_num].median()],axis=1)
+df_minmaxmoy.columns=['moyenne','ecart_type','minimum','maximum','mediane']
+df_minmaxmoy.to_csv(path+'df_minmaxmoy.csv')
+#100001
+# test_set.iloc[5]
 
-application_final['DAYS_EMPLOYED'].sort_values()
-
-ddd=application_final[application_final['DAYS_EMPLOYED']>0]
-ddd['DAYS_EMPLOYED'].sort_values()
-ddd['NAME_INCOME_TYPE'].value_counts()
-
-application_final[['TARGET','AMT_INCOME_TOTAL']].sort_values('AMT_INCOME_TOTAL')
-
-application_final.loc[10990]
-
-X_test
+pd.concat([df_minmaxmoy,test_set.loc[100001,col_num]], axis=1)
