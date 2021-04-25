@@ -17,6 +17,9 @@ from sklearn.model_selection import train_test_split,GridSearchCV
 from imblearn.over_sampling import SMOTE,RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
 from sklearn.ensemble import RandomForestClassifier
+from joblib import dump,load
+
+
 
 pd.set_option('display.max_columns', 40)
 pd.set_option('display.max_rows', 150)
@@ -32,8 +35,8 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 #sample_submission=pd.read_csv(path+'sample_submission.csv')
 #bureau=pd.read_csv(path+'bureau.csv')
 #application_test=pd.read_csv(path+'application_test.csv')
-#application_train=pd.read_csv(path+'application_train.csv')
-
+application_train=pd.read_csv(path+'application_train.csv')
+application_train['TARGET'].value_counts(normalize=True)
 #feature engeneering
 deja_fait=True
 if not deja_fait:
@@ -124,33 +127,48 @@ np.sort(df_final_test.columns.to_list())
 
 tests=False
 if tests:
-    application_final.columns
     #Test des différents hyper-paramètres
-    meth=['Class_weight'] #['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
-    algo=['LR'] 
+    meth=['Class_weight','SMOTE', 'RandomUnderSampler']
+    algo=['RF','LR'] 
     paramc=[0.01,0.1,1,10]
-    df_resultats,_,_=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,paramc,False)
+    parammd=[7,10,13,16]
+    #meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
+    #algo=['RF','LR'] 
+    #paramc=[0.01,0.1,1,10]
+    #parammd=[7,8,9,10,11,12,13]
+    df_resultats_2=fc.modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,paramc,parammd,False)
+    df_resultats_2['F_beta']=(5*df_resultats_2['Precision']*df_resultats_2['Recall'])\
+    /((4*df_resultats_2['Precision'])+df_resultats_2['Recall'])
+    df_resultats_2.to_csv(path+'df_resultatsF1B.csv')
 
-    df_resultats
-    #############
-
-    df_resultats.to_csv(path+'df_resultatsN.csv')
-
+resultats_finaux=pd.read_csv(path+'df_resultatsF1B.csv')
+resultats_finaux
 ############## modelisation avec des paramètres sélectionnés ######################
 lr2=LogisticRegression(max_iter=2000, class_weight='balanced',random_state=0, C=0.01)
 lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
 
+dump(lr2, 'modele_sauvegarde.joblib') 
+
 acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=True)
 
 df_final_test_pred=X_test.copy()
-df_final_test_pred['y_pred']=y_prob
-df_final_test_pred.to_csv(path+'df_pour_dashboard.csv')
+#df_final_test_pred['y_pred']=y_prob
+df_final_test_pred.to_csv(path+'df_test_avant_transfo_pour_dashboard.csv') #pour les graphs/stats
 
 df_final_test.index=X_test.index
-df_final_test.to_csv(path+'df_test_prep.csv')
 
+df_final_test.to_csv(path+'df_test_prep_pour_dashboard.csv') #pour la modélisation
+
+
+df_train_pour_dash=X_train.copy()
+df_train_pour_dash['label']=y_train
+df_train_pour_dash.to_csv(path+'df_train_pour_dashboard.csv') #pour les graphs/stats
+
+X_test
+
+y_train
 coefs=lr2.coef_
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Variables','Coef']
@@ -172,7 +190,9 @@ inter_coef=df_coef[['Coef']].join(df_final_test.loc[iden])
 inter_coef.columns=['Coef','Value']
 inter_coef['impact']=inter_coef['Coef']*inter_coef['Value']
 impa=inter_coef['impact'].sum()
-
+np.sort(inter_coef.index)
+inter_coef.sort_values('Coef').head(15)
+inter
 print(pred,'',impa)
 
 impa #-0.94 somme des coefs
@@ -201,3 +221,16 @@ df_minmaxmoy.to_csv(path+'df_minmaxmoy.csv')
 #Matrice de confusion :[[42262 18518]
 # [ 1590  3502]]
 #Accuracy : 0.695 ROC AUC : 0.758 AUC Precision-Recall : 0.237 F1 : 0.258
+
+df_resultats_MN=pd.read_csv(path+'df_resultatsMN.csv', index_col=0)
+df_resultats_MN.sort_values(['algo','methode'])
+
+df_resultats_MN['numer_F1']=df_resultats_MN['Recall']*df_resultats_MN['Precision']*2
+df_resultats_MN['denom_F1']=df_resultats_MN['Recall']+df_resultats_MN['Precision']
+
+df_resultats_MN[['algo', 'methode', 'Best_params',  'Confusion_matrix',
+       'Precision_Recall_AUC', 'Recall',
+       'Precision', 'numer_F1','denom_F1','F1_score']].sort_values('F1_score')
+
+
+df_resultats_MN.sort_values(['F_beta'])

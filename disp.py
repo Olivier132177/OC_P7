@@ -8,7 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 import dash
 import dash_table
-
+from joblib import dump,load
 app2 = dash.Dash(__name__)
 
 #test
@@ -61,6 +61,7 @@ def tableau_comp(inde):
         nouv_tabl[i]=nouv_tabl[i].astype('str')
     return nouv_tabl.to_dict('records')
 
+tableau_comp(135480)
 
 ############
 def jauge(variable, ind,titre):
@@ -69,6 +70,7 @@ def jauge(variable, ind,titre):
     #val_med=round(application_final[variable].median()*100,1)
     if ind:
         val=round(application_final.loc[ind,variable]*100,1)
+        scor=np.log(application_final.loc[ind,variable]/(1-application_final.loc[ind,variable]))
     else:
         val=50
     figu = go.Figure(go.Indicator(

@@ -5,12 +5,14 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import confusion_matrix,accuracy_score,auc,f1_score\
     ,roc_auc_score, precision_recall_curve, plot_roc_curve\
-        , plot_confusion_matrix, plot_precision_recall_curve,auc
+        , plot_confusion_matrix, plot_precision_recall_curve,auc\
+            ,fbeta_score, make_scorer
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
+
 
 def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
 #1ere partie du feature engeneering
@@ -405,7 +407,9 @@ def nom_colonnes(col_cat_train,col_num_train):
         tab_nom_col.append(i)
     return tab_nom_col_cat,tab_nom_col
 
-def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,graphs):
+def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,param_md,graphs):
+    ftwo_scorer = make_scorer(fbeta_score, beta=2)
+
     result =[]
     for i in meth: # Undersampling / Oversampling du dataset
         if i=='SMOTE': # 1 SMOTE
@@ -428,22 +432,17 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,
         for j in algo : #modelisation
             print('Méthode : {}\nAlgo : {}'.format(i,j))
             if j=='LR':
-                lr1=LogisticRegression(max_iter=2000, class_weight=cw,random_state=0)
+                est=LogisticRegression(max_iter=2000, class_weight=cw,random_state=0)
                 param={'C':param_c}
-                gs=GridSearchCV(lr1,param,cv=3, scoring='roc_auc')
-                gs.fit(df_final_train_v2, y_train_v2)
-                resu_lr=gs.predict(df_final_test)
-                proba_lr=(gs.predict_proba(df_final_test)).T[1]
-                best_params=gs.best_params_
-                
-                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_lr,proba_lr,gs,df_final_test, graphs) 
             elif j=='RF':
                 est=RandomForestClassifier(class_weight=cw, random_state=0, n_estimators=500)
-                est.fit(df_final_train_v2, y_train_v2)
-                resu_rf=est.predict(df_final_test)
-                proba_rf=(est.predict_proba(df_final_test)).T[1]
-                best_params=0
-                acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu_rf,proba_rf,est,df_final_test, graphs) 
+                param={'max_depth':param_md}
+            gs=GridSearchCV(est,param,cv=2, scoring=ftwo_scorer,verbose=5)
+            gs.fit(df_final_train_v2, y_train_v2)
+            resu=gs.predict(df_final_test)
+            proba=(gs.predict_proba(df_final_test)).T[1]
+            best_params=gs.best_params_
+            acc, mat, a_u_c, f1,roc_pr=scores(y_test,resu,proba,est,df_final_test, graphs) 
         # Scores
             
             
@@ -458,7 +457,7 @@ def modelisation2(df_final_train,y_train,df_final_test,y_test,meth,algo,param_c,
     result['Recall']=result['True Positive']/(result['True Positive']+result['False Negative'])
     result['Precision']=result['True Positive']/(result['True Positive']+result['False Positive'])
 
-    return result, proba_lr, resu_lr
+    return result
 
 def score_par_seuil(y_test,y_pred,seuil):
     tab_res=pd.DataFrame()

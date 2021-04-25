@@ -1,0 +1,49 @@
+1)Methodologie d'entrainement du modèle
+
+	-Feature engeneering inspiré de codes disponibles sur Kaggle
+	(point sur la détection de la class imbalance avec proportion)
+	(classification binaire apprentissage supervisé...)
+	-Train_test_split avec 25% de data test
+	-3 méthodes de retraiement du dataset testées pour tenter de corriger le déséquilibre des classes : SMOTE, RandomUnderSampler et Classweight
+	(2 méthode de sampling (expliquer),1 de pénalisation plus forte des erreurs des classes 1) - important de développer
+	
+	
+	-Comparaison des modèles LogisticRegression (penalty l2) et RandomForestClassifier 
+	
+	-utilisation d'un GridsearchCV 3CV pour la définition des hyper-paramètres C (LogisticRegression) et max_depth(RandomForestClassifier) (préciser les détails)
+	
+(point 2) -Métrique d'évaluation : ROC AUC et F1 score. Rappeler les dangers (accuracy etc...) et l différence d'importance entre les erreurs sur les 1 vs erreur sur les 0 (important)
+		donner des exemples
+		
+2)La fonction coût, l'algorithme d'optimisation et la métrique d'évaluation
+		fonction de coût . expliquer en 3 4 phrases pb convexe etc... (résumé simple)
+		
+3)L’interprétabilité du modèle
+
+	A chaque variable est associé un coefficient
+	La somme des (coefficients*valeurs) et de l'intercept donne un score qui correspond au ln de la cote de voir un défaut de paiement se produire
+	(label 1)
+	exp(score) donne la cote et cote/(1+cote) donne une prédiction de la probabilité qui correspond à la contribution au ln de la cote
+	
+	ex: 
+	
+	Coef1 * Valeur1 = -0.94
+
+
+	Intercept = -0.74
+	(Coef1 * Valeur1) + Intercept = -1.68 = ln de la cote de l'évènement "1"
+	Cote de l'évènement 1 = exp(ln de la cote) = 0.19
+	Proba 1 = Cote/(1+Cote)= 0.16
+	
+	Plus le produit coef * valeur est négatif plus il diminue la probabilité de l'évènement 1
+	Plus le produit coef * valeur est positif plus il augmente la probabilité de l'évènement 1
+	
+	
+4)Les limites et les améliorations possibles
+
+(plein de choses à dire)
+que peut-on améliorer? (mais sur l'ensemble)
+-> déséquilibre des classes
+-> différents modèles
+biais/variance
+qualité de la prédiction / interprétabilité
