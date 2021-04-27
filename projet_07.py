@@ -46,7 +46,9 @@ print('tout fini')
 application_final=pd.read_csv(path+'application_final.csv', index_col=0).set_index('SK_ID_CURR')
 application_final.loc[application_final['DAYS_EMPLOYED']>0,'DAYS_EMPLOYED']=np.nan
 #application_final=application_final.drop(index=10990)
-application_final
+
+application_final['LN_REVENU_TOTAL']=np.log(application_final['AMT_INCOME_TOTAL'])
+
 variables_supprimees=['AGE_RANGE','APARTMENTS_MEDI','YEARS_BUILD_MODE']#,'SK_ID_CURR']
 
 variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_START',
@@ -218,9 +220,9 @@ df_minmaxmoy.to_csv(path+'df_minmaxmoy.csv')
 
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01
-#Matrice de confusion :[[42262 18518]
-# [ 1590  3502]]
-#Accuracy : 0.695 ROC AUC : 0.758 AUC Precision-Recall : 0.237 F1 : 0.258
+#Matrice de confusion :[[42254 18526]
+# [ 1567  3525]]
+#Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.241 F1 : 0.26
 
 df_resultats_MN=pd.read_csv(path+'df_resultatsMN.csv', index_col=0)
 df_resultats_MN.sort_values(['algo','methode'])
