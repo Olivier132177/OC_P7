@@ -328,7 +328,7 @@ if tests:
 resultats_finaux=pd.read_csv(path+'df_resultatsF1B.csv')
 resultats_finaux
 ############## modelisation avec des paramètres sélectionnés ######################
-lr2=LogisticRegression(max_iter=2000, class_weight='balanced',random_state=0, C=0.05,penalty='l1',solver='saga')
+lr2=LogisticRegression(max_iter=2000, class_weight='balanced',random_state=0, C=0.02)#5,penalty='l1',solver='saga')
 lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
@@ -359,24 +359,6 @@ df_coef=df_coef.set_index('Variables')
 df_coef.sort_values('AbsCoef').iloc[0:20]
 #df_coef.index==df_final_test.columns
 df_coef.to_csv(path+'coefficients.csv')
-
-inter=lr2.intercept_[0]
-
-#398172
-#412932
-#135480
-
-iden=412932
-
-pred=df_final_test_pred.loc[iden,'y_pred']
-inter_coef=df_coef[['Coef']].join(df_final_test.loc[iden])
-inter_coef.columns=['Coef','Value']
-inter_coef['impact']=inter_coef['Coef']*inter_coef['Value']
-impa=inter_coef['impact'].sum()
-np.sort(inter_coef.index)
-inter_coef.sort_values('Coef').head(15)
-inter
-print(pred,'',impa)
 
 
 ########## Meilleurs résultats obtenus ############
