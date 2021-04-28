@@ -337,17 +337,13 @@ page3=html.Div([
                 html.H1('Elements du dossier'),
                 html.Div('Sélectionner un numéro de dossier :'),
                 dcc.Dropdown(id='liste_3a',options=[{'label': i, 'value': i} for i in application_numbers]),
-                dcc.RadioItems(options=[
+                dcc.RadioItems(id='boutons',options=[
                                         {'label':'Informations client','value':'info'},
                                         {'label':'Caractéristiques du prêt','value':'carac'},
                                         {'label':'Elements du dossier','value':'elem'}
                                         ], value='info'),
-                html.Div('Informations client'),
+                html.Div(id='type_info',children='Informations client'),
                 dash_table.DataTable(id='table',columns=[{'name':i,'id':i} for i in ['Variable','Valeur']]),
-                html.Div('Caractéristiques du prêt'),
-                dash_table.DataTable(id='table2',columns=[{'name':i,'id':i} for i in ['Variable','Valeur']]),
-                html.Div('Informations prêt'),
-                dash_table.DataTable(id='table3',columns=[{'name':i,'id':i} for i in ['Variable','Valeur']])
                 
                 ])
 
@@ -510,28 +506,40 @@ col_info_client=['SEXE', 'POSSEDE_UNE_VOITURE', 'REVENUS_CLIENTS',
        'PROFESSION','TYPE_SOCIETE']
 col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
        'CREDIT_TERM', 'DUREE_DU_CREDIT']
+col_info_elements=['A_FOURNI_LE_DOCUMENT_3', 'A_FOURNI_LE_DOCUMENT_6',
+       'A_FOURNI_LE_DOCUMENT_7', 'A_FOURNI_LE_DOCUMENT_10',
+       'A_FOURNI_LE_DOCUMENT_11', 'A_FOURNI_LE_DOCUMENT_13',
+       'A_FOURNI_LE_DOCUMENT_14', 'A_FOURNI_LE_DOCUMENT_15',
+       'A_FOURNI_LE_DOCUMENT_16', 'A_FOURNI_LE_DOCUMENT_17',
+       'A_FOURNI_LE_DOCUMENT_18', 'A_FOURNI_LE_DOCUMENT_20',
+       'A_FOURNI_LE_DOCUMENT_21']
 
 @app.callback(# page3
     Output('table','data'),
-    Output('table2','data'),
-    Input('liste_3a','value')
+    Output('type_info','children'),
+    Input('liste_3a','value'),
+    Input('boutons','value')
             )
-def update_page3(dossier):
+def update_page3(dossier, val_bouton):
     if dossier:
 
-        dos=data_test_avant.loc[dossier,col_info_client].reset_index()
+        if val_bouton=='info':
+            sub_col=col_info_client
+            txtinfo='Informations Clients'           
+        elif val_bouton=='carac':
+            sub_col=col_info_pret
+            txtinfo='Caractéristiques Prêt'           
+        elif val_bouton=='elem':
+            sub_col=col_info_elements
+            txtinfo='Elements du dossier'           
+ 
+        dos=data_test_avant.loc[dossier,sub_col].reset_index()
         dos.columns=['Variable','Valeur']
         dos= dos.to_dict('records')
-
-        dos1=data_test_avant.loc[dossier,col_info_pret].reset_index()
-        dos1.columns=['Variable','Valeur']
-        dos1= dos1.to_dict('records')
-
     else :
         dos=[]
-        dos1=[]
 
-    return dos,dos1
+    return dos,txtinfo
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8086)
@@ -581,3 +589,5 @@ data_train.columns[np.isin(data_train.columns,col_info_client,invert=True)]
 
 col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
        'CREDIT_TERM', 'DUREE_DU_CREDIT']
+
+help(dcc.RadioItems)
