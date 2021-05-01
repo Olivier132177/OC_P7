@@ -22,6 +22,7 @@ data_test_avant=pd.read_csv('data/df_test_avant_transfo_pour_dashboard.csv', ind
 data_train=pd.read_csv('data/df_train_pour_dashboard.csv', index_col=0)
 coefficients=pd.read_csv('data/coefficients.csv',index_col=0)
 
+data_train['REVENUS_CLIENTS'].sort_values()
 #application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
 
 def boxplot(variable,dossier):
@@ -118,9 +119,9 @@ def boxplot(variable,dossier):
     fig5.add_trace(go.Box(x=data_train.loc[:,variable],name='Ensemble des dossiers', marker_color='blue', boxmean='sd'))
     fig6=go.Figure()
     
-    fig4.update_layout(height=300)
-    fig5.update_layout(height=300)
-    fig6.update_layout(height=300)
+    fig4.update_layout(height=350)
+    fig5.update_layout(height=350)
+    fig6.update_layout(height=10)
     
     return fig4,fig5,fig6
 
@@ -209,13 +210,15 @@ def categ_plots(vari,vale):
     df_gb2t=df_gb2t.reset_index()
     df_gb2t=pd.melt(df_gb2t,id_vars=variable)
     df_gb2t['label'].map({0:'Dossiers sans incident',1:'Dossiers avec défaut de paiement'})
+    df_gb2t['value']=round(df_gb2t['value']*100,1)
     df_gb3t
     df_gb3t.index=df_gb3.index
     df_gb3t.columns=df_gb3.columns
     df_gb3t=df_gb3t.rename(index={0:'Dossiers sans incident',1:'Dossiers avec défaut de paiement'})
     df_gb3t=df_gb3t.reset_index()
     df_gb3t=pd.melt(df_gb3t,id_vars='label')
-
+    df_gb3t['value']=round(df_gb3t['value']*100,1)
+    df_gb1=round(df_gb1*100,1)
     tab_coul=df_gb1.index==vale
     print(vale)
     print(df_gb1)
@@ -223,10 +226,14 @@ def categ_plots(vari,vale):
     print(coul_bar)
     
     graph1=px.bar(df_gb1,x=df_gb1.values,y=df_gb1.index,orientation='h',
-    color_discrete_sequence=coul_bar,color=df_gb1.index)  
+    color_discrete_sequence=coul_bar,color=df_gb1.index, text=df_gb1.values, 
+    labels={'x':'Pourcentage (%)','index':'Catégories'})
+    #graph1.update_layout(visible =tab_coul)
 
-    test4=px.bar(df_gb2t,y=variable,x='value',color='label',barmode='stack', orientation='h')
-    test5=px.bar(df_gb3t,y='label',x='value',color=variable, orientation='h')
+    test4=px.bar(df_gb2t,y=variable,x='value',color='label',barmode='stack', orientation='h',
+    labels={'value':'Pourcentage (%)',variable:'Catégories'}, text='value')
+    test5=px.bar(df_gb3t,y='label',x='value',color=variable, orientation='h',
+    labels={'label':'','value':'Pourcentage (%)'}, text='value')
     graph1.update_layout(height=250)
     test4.update_layout(height=250)
     test5.update_layout(height=250)
@@ -300,13 +307,14 @@ CONTENT_STYLE1 = {
 page1=html.Div([
                 html.Div('Sélectionner un numéro de dossier:'),
                 dcc.Dropdown(id='liste_1',options=[{'label': i, 'value': i} for i in application_numbers]),
+                html.H4(id='phrase',style={'height':50}),  
                 html.Div([
                         html.Div([
                             dcc.Graph(id='jauge_target',figure=fig1),
                             dcc.Graph(id='score',figure=fig_score),
                                 ],style={'display':'flex'}),
                         ],style={'width':1600,'height':300,'display':'flex'}),
-                html.H4(id='phrase',style={'height':50}),  
+                
                 
                 
                 html.Div([
@@ -329,8 +337,7 @@ page2=html.Div([
                dcc.Dropdown(id='liste_2b',options=[{'label': i, 'value': i} for i in data_train.iloc[:,:-1].columns]),
                dcc.Graph(id='analyse_variable',style={'height':300}),
                dcc.Graph(id='analyse_variable2'),
-               dcc.Graph(id='analyse_variable3'),
-                dcc.Graph(id='variable_client'),
+               dcc.Graph(id='analyse_variable3')
                           
                 ])
 page3=html.Div([
@@ -338,12 +345,13 @@ page3=html.Div([
                 html.Div('Sélectionner un numéro de dossier :'),
                 dcc.Dropdown(id='liste_3a',options=[{'label': i, 'value': i} for i in application_numbers]),
                 dcc.RadioItems(id='boutons',options=[
-                                        {'label':'Informations client','value':'info'},
-                                        {'label':'Caractéristiques du prêt','value':'carac'},
+                                        {'label':"Informations client",'value':'info'},
+                                        {'label':"Caractéristiques du prêt",'value':'carac'},
                                         {'label':'Elements du dossier','value':'elem'}
-                                        ], value='info'),
+                                        ], value='info',inputStyle={"margin-left": "20px"}),
                 html.Div(id='type_info',children='Informations client'),
-                dash_table.DataTable(id='table',columns=[{'name':i,'id':i} for i in ['Variable','Valeur']]),
+                dash_table.DataTable(id='table',columns=[{'name':i,'id':i} for i in ['Variable','Valeur']],
+                style_cell={'width':300}),
                 
                 ])
 
@@ -466,10 +474,11 @@ def update_page1(ind):
 
     else:
         fig1=jauge(ind=False,prob=50,visib=False)
-        tneg=px.bar()
-        tpos=px.bar()
-        fig_score=go.Figure(go.Indicator())
+        tneg=go.Figure(go.Bar(visible=False))
+        tpos=go.Figure(go.Bar(visible=False))
+        fig_score=go.Figure(go.Indicator(visible=False))
         phra=""
+        
     return fig1, fig_score,tneg,tpos, phra
 
 @app.callback(# page2
@@ -489,30 +498,16 @@ def update_page2(variable, dossier):
             else :
                 fig4,fig5,fig6=categ_plots(variable,vale)
         else:
-            fig4=go.Figure()
-            fig5=go.Figure()
-            fig6=go.Figure()
+            fig4=go.Figure(go.Bar(visible=False))
+            fig5=go.Figure(go.Bar(visible=False))
+            fig6=go.Figure(go.Bar(visible=False))
     else :
-            fig4=go.Figure()
-            fig5=go.Figure()
-            fig6=go.Figure()
+            fig4=go.Figure(go.Bar(visible=False))
+            fig5=go.Figure(go.Bar(visible=False))
+            fig6=go.Figure(go.Bar(visible=False))
         
     return fig4,fig5,fig6
 
-col_info_client=['SEXE', 'POSSEDE_UNE_VOITURE', 'REVENUS_CLIENTS',
-       'QUI ACCOMPAGNE LE CLIENT?', 'TYPE_DE_REVENUS', 'NIVEAU_D_ETUDES',
-       'STATUT FAMILIAL', 'LOGEMENT_ACTUEL',
-       'AGE_EN_JOURS', 'EMPLOYE DEPUIS',
-       'PROFESSION','TYPE_SOCIETE']
-col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
-       'CREDIT_TERM', 'DUREE_DU_CREDIT']
-col_info_elements=['A_FOURNI_LE_DOCUMENT_3', 'A_FOURNI_LE_DOCUMENT_6',
-       'A_FOURNI_LE_DOCUMENT_7', 'A_FOURNI_LE_DOCUMENT_10',
-       'A_FOURNI_LE_DOCUMENT_11', 'A_FOURNI_LE_DOCUMENT_13',
-       'A_FOURNI_LE_DOCUMENT_14', 'A_FOURNI_LE_DOCUMENT_15',
-       'A_FOURNI_LE_DOCUMENT_16', 'A_FOURNI_LE_DOCUMENT_17',
-       'A_FOURNI_LE_DOCUMENT_18', 'A_FOURNI_LE_DOCUMENT_20',
-       'A_FOURNI_LE_DOCUMENT_21']
 
 @app.callback(# page3
     Output('table','data'),
@@ -521,6 +516,21 @@ col_info_elements=['A_FOURNI_LE_DOCUMENT_3', 'A_FOURNI_LE_DOCUMENT_6',
     Input('boutons','value')
             )
 def update_page3(dossier, val_bouton):
+    col_info_client=['SEXE', 'POSSEDE_UNE_VOITURE', 'REVENUS_CLIENTS',
+       'ACCOMPAGNATEUR', 'TYPE_DE_REVENUS', 'NIVEAU_D_ETUDES',
+       'STATUT FAMILIAL', 'LOGEMENT_ACTUEL',
+       'AGE_EN_JOURS', 'EMPLOYE DEPUIS',
+       'PROFESSION','TYPE_SOCIETE']
+    col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
+       'CREDIT_TERM', 'DUREE_DU_CREDIT']
+    col_info_elements=['A_FOURNI_LE_DOCUMENT_3', 'A_FOURNI_LE_DOCUMENT_6',
+       'A_FOURNI_LE_DOCUMENT_7', 'A_FOURNI_LE_DOCUMENT_10',
+       'A_FOURNI_LE_DOCUMENT_11', 'A_FOURNI_LE_DOCUMENT_13',
+       'A_FOURNI_LE_DOCUMENT_14', 'A_FOURNI_LE_DOCUMENT_15',
+       'A_FOURNI_LE_DOCUMENT_16', 'A_FOURNI_LE_DOCUMENT_17',
+       'A_FOURNI_LE_DOCUMENT_18', 'A_FOURNI_LE_DOCUMENT_20',
+       'A_FOURNI_LE_DOCUMENT_21']
+
     if dossier:
 
         if val_bouton=='info':
@@ -532,20 +542,19 @@ def update_page3(dossier, val_bouton):
         elif val_bouton=='elem':
             sub_col=col_info_elements
             txtinfo='Elements du dossier'           
- 
         dos=data_test_avant.loc[dossier,sub_col].reset_index()
         dos.columns=['Variable','Valeur']
         dos= dos.to_dict('records')
     else :
         dos=[]
+        txtinfo=''
 
     return dos,txtinfo
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8086)
 
-dos=data_test_avant.iloc[8].reset_index()
-dos
+
 ############test################
 
 a,_,_,_=impact_coef(412932,10)
@@ -582,12 +591,3 @@ fig.append_trace(trace1, 2, 1)
 fig.append_trace(trace2, 3, 1)
 
 fig.show()
-
-##############
-
-data_train.columns[np.isin(data_train.columns,col_info_client,invert=True)]
-
-col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
-       'CREDIT_TERM', 'DUREE_DU_CREDIT']
-
-help(dcc.RadioItems)
