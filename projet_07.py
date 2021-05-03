@@ -18,7 +18,8 @@ from imblearn.over_sampling import SMOTE,RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
 from sklearn.ensemble import RandomForestClassifier
 from joblib import dump,load
-
+import seaborn as sns
+from tabulate import tabulate
 
 
 pd.set_option('display.max_columns', 40)
@@ -36,16 +37,27 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 #bureau=pd.read_csv(path+'bureau.csv')
 #application_test=pd.read_csv(path+'application_test.csv')
 application_train=pd.read_csv(path+'application_train.csv')
-application_train['TARGET'].value_counts(normalize=True)
+len(application_train)
+imbala=application_train['TARGET'].value_counts(normalize=True)
+imbala=round(imbala*100,1)
+plt.bar(imbala.index,imbala.values)
+plt.xticks(imbala.index)
+plt.xlabel('Labels')
+plt.ylabel('Pourcentage du dataset (%)')
+plt.yticks(np.arange(0,105,5))
+plt.show(block=False)
+
+
+imbala
 #feature engeneering
 deja_fait=True
 if not deja_fait:
-    fc.feature_engineering(path,True,True,True)
+    fc.feature_engineering(path,False,False,False)
 print('tout fini')
 ##################### suppression des variables inutiles ################################""
 application_final=pd.read_csv(path+'application_final.csv', index_col=0).set_index('SK_ID_CURR')
 
-application_final=fc.post_feat_eng(application_final)
+application_final=fc.post_feat_eng(application_final) #renome les colonnes, fusionne des catégories
 
 #séparation du train set et du test set, recuperation des noms de colonnes
 train_set,test_set,label,col_cat,col_num,features = fc.preparation_df(application_final)
@@ -90,7 +102,7 @@ np.sort(df_final_test.columns.to_list())
 tests=False
 if tests:
     #Test des différents hyper-paramètres
-    meth=['Class_weight','SMOTE', 'RandomUnderSampler']
+    meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
     param_lr={'C':[0.01,0.1,1,10],'penalty':['l1','l2']}
     #parammd=[7,10,13,16]
     #meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
@@ -103,10 +115,11 @@ if tests:
     /((4*df_resultats_2['Precision'])+df_resultats_2['Recall'])
     df_resultats_2.to_csv(path+'df_resultats_apres.csv')
 
-resultats_finaux=pd.read_csv(path+'df_resultats_apres.csv')
+resultats_finaux=pd.read_csv(path+'df_resultats_apres.csv', index_col=0)
 
 resultats_finaux
-############## modelisation avec des paramètres sélectionnés ######################
+
+
 rus = RandomUnderSampler(random_state=0)
 df_final_train_v2, y_train_v2 = rus.fit_resample\
 (np.array(df_final_train), np.array(y_train))
@@ -117,7 +130,20 @@ lr2.fit(df_final_train_v2, y_train_v2)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
 
-acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=True)
+acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=False)
+
+meil_resultat=pd.Series({'Accuracy':acc,'ROC_AUC':a_u_c,'Precision_Recall_AUC' : auc_pr,'F1_score':f1,
+        'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
+        'False Positive': mat[0,1],'False Negative': mat[1,0]})
+meil_resultat['Precision']=meil_resultat['True Positive']/(meil_resultat['True Positive']+meil_resultat['False Positive'])
+meil_resultat['Recall']=meil_resultat['True Positive']/(meil_resultat['True Positive']+meil_resultat['False Negative'])
+
+coef_beta=2
+intitu='F_beta_score_{}'.format(coef_beta)
+meil_resultat[intitu]=((1+coef_beta**2)*meil_resultat['Precision']*meil_resultat['Recall'])\
+    /(((coef_beta**2)*meil_resultat['Precision'])+meil_resultat['Recall'])
+
+meil_resultat
 
 dump(lr2, 'modele_sauvegarde.joblib') 
 
@@ -129,19 +155,17 @@ df_final_test.index=X_test.index
 
 df_final_test.to_csv(path+'df_test_prep_pour_dashboard.csv') #pour la modélisation
 
-
 df_train_pour_dash=X_train.copy()
 df_train_pour_dash['label']=y_train
 df_train_pour_dash.to_csv(path+'df_train_pour_dashboard.csv') #pour les graphs/stats
 
-
 coefs=lr2.coef_
+
 df_coef=pd.concat([pd.Series(tab_nom_col),pd.Series(coefs[0])],axis=1)
 df_coef.columns=['Variables','Coef']
 df_coef['AbsCoef']=np.abs(df_coef['Coef'])
 df_coef=df_coef.set_index('Variables')
 df_coef.sort_values('AbsCoef').iloc[0:20]
-#df_coef.index==df_final_test.columns
 df_coef.to_csv(path+'coefficients.csv')
 
 
@@ -154,23 +178,6 @@ df_coef.to_csv(path+'coefficients.csv')
 ########Derniere tentative
 #Matrice de confusion :[[42247 18533]
 # [ 1570  3522]]
-#Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.24 F1 : 0.259
+#Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.24 F1 : 0.259*
 
-df_resultats_MN=pd.read_csv(path+'df_resultatsMN.csv', index_col=0)
-df_resultats_MN.sort_values(['algo','methode'])
-
-df_resultats_MN['numer_F1']=df_resultats_MN['Recall']*df_resultats_MN['Precision']*2
-df_resultats_MN['denom_F1']=df_resultats_MN['Recall']+df_resultats_MN['Precision']
-
-df_resultats_MN[['algo', 'methode', 'Best_params',  'Confusion_matrix',
-       'Precision_Recall_AUC', 'Recall',
-       'Precision', 'numer_F1','denom_F1','F1_score']].sort_values('F1_score')
-
-
-df_resultats_MN.sort_values(['F_beta'])
-
-application_final['NAME_INCOME_TYPE'].unique()
-
-
-
-application_final.columns
+print(tabulate(resultats_finaux, headers=resultats_finaux.columns))

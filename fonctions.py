@@ -230,12 +230,12 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
 
 
     df['DAYS_BIRTH'] = abs(df['DAYS_BIRTH'])
-    df['family_members_more7']= np.where(df['CNT_FAM_MEMBERS']>7,1,0)
-    df['islowskilled_labour']= np.where(df['OCCUPATION_TYPE']=='Low-skill Laborers',1,0)
-    df['is_Maternity_leave']= np.where(df['NAME_INCOME_TYPE'] =='Maternity leave' ,1,0)
-    df['is_unemployed']= np.where(df['NAME_INCOME_TYPE'] =='Unemployed' ,1,0)
+    df['family_members_more7']= np.where(df['CNT_FAM_MEMBERS']>7,'Oui','Non')
+    df['islowskilled_labour']= np.where(df['OCCUPATION_TYPE']=='Low-skill Laborers','Oui','Non')
+    df['is_Maternity_leave']= np.where(df['NAME_INCOME_TYPE'] =='Maternity leave' ,'Oui','Non')
+    df['is_unemployed']= np.where(df['NAME_INCOME_TYPE'] =='Unemployed' ,'Oui','Non')
 
-    df['cnt_childern_more6']= np.where(df['CNT_CHILDREN'] > 6,1,0)
+    df['cnt_childern_more6']= np.where(df['CNT_CHILDREN'] > 6,'Oui','Non')
     plt.style.use('fivethirtyeight')
 
     # Plot the distribution of ages in years
@@ -345,16 +345,11 @@ def preparation_df(df):
     label=train_set['TARGET'] #label
     features=df.columns[\
         np.isin(df.columns,'TARGET', invert=True)] #features
-    col_not_num=df.loc[:,features]\
-        .select_dtypes(exclude='number').columns #colonnes non numériques
-    col_oth=df.loc[:,features]\
-        .select_dtypes(include='number').columns #autres colonnes
-    col_boo=col_oth[col_oth.str.contains('FLAG')\
-        |col_oth.str.contains('REGION_NOT')|\
-            col_oth.str.contains('CITY_NOT')] #colonnes de booleens parmi les autres colonnes
-    col_num=col_oth[np.isin(col_oth, col_boo, invert=True)] #colonnes_numeriques
-    col_cat=features[np.isin(features, col_num, invert=True)] #colonnes_categorielles
-    del col_not_num, col_oth
+    col_cat=df.loc[:,features]\
+        .select_dtypes(exclude='number').columns #colonnes categorielles
+    col_num=df.loc[:,features]\
+        .select_dtypes('number').columns #colonnes numériques
+    
     return train_set,test_set,label,col_cat,col_num,features
 
 def preprocessing(col_num,col_cat, cat_col_cat):
@@ -490,6 +485,22 @@ def score_par_seuil(y_test,y_pred,seuil):
 
 def post_feat_eng(application_final):
 
+    features=application_final.columns[\
+    np.isin(application_final.columns,'TARGET', invert=True)] #features
+    col_not_num=application_final.loc[:,features]\
+    .select_dtypes(exclude='number').columns #colonnes non numériques
+    col_oth=application_final.loc[:,features]\
+    .select_dtypes(include='number').columns #autres colonnes
+    col_boo=col_oth[col_oth.str.contains('FLAG')\
+    |col_oth.str.contains('REGION_NOT')|\
+    col_oth.str.contains('CITY_NOT')] #colonnes de booleens parmi les autres colonnes
+    col_num=col_oth[np.isin(col_oth, col_boo, invert=True)] #colonnes_numeriques
+    col_cat=features[np.isin(features, col_num, invert=True)] #colonnes_categorielles
+    del col_not_num, col_oth
+
+    for i in col_boo:
+        application_final[i]=application_final[i].map({0:'Oui',1:'Non'})
+    
     application_final.loc[application_final['DAYS_EMPLOYED']>0,'DAYS_EMPLOYED']=np.nan
     dict_name_income_type={
     'Working':'Working', 
@@ -640,7 +651,7 @@ def post_feat_eng(application_final):
                 'NAME_FAMILY_STATUS':'STATUT FAMILIAL',
                 'NAME_HOUSING_TYPE':'LOGEMENT_ACTUEL',
                 'REGION_POPULATION_RELATIVE':'POPULATION_DE_LA_REGION_NORMALISEE',
-                'DAYS_BIRTH_x':'AGE_EN_JOURS', 
+                'DAYS_BIRTH_x':'AGE', 
                 'DAYS_EMPLOYED':'EMPLOYE DEPUIS', 
                 'DAYS_REGISTRATION' :'NOMBRE_DE_JOURS_DEPUIS_MISE_A_JOUR_PAPIERS', 
                 'DAYS_ID_PUBLISH':'NOMBRE_DE_JOURS_DEPUIS_CHANGEMENT_PAPIERS_IDENTITE',
@@ -710,5 +721,6 @@ def post_feat_eng(application_final):
                 'TARGET':'TARGET'}
 
     application_final=application_final.rename(columns=nom_colonnes)
+    application_final['AGE']=application_final['AGE']//365.25
 
     return application_final

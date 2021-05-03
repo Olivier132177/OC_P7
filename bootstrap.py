@@ -21,10 +21,11 @@ data_test_apres=pd.read_csv('data/df_test_prep_pour_dashboard.csv', index_col=0)
 data_test_avant=pd.read_csv('data/df_test_avant_transfo_pour_dashboard.csv', index_col=0)
 data_train=pd.read_csv('data/df_train_pour_dashboard.csv', index_col=0)
 coefficients=pd.read_csv('data/coefficients.csv',index_col=0)
-
+inte=round(modele.intercept_[0],3)
+intercep=pd.Series([inte,np.abs(inte),1,inte],name='Valeur_d_origine')
 data_train['REVENUS_CLIENTS'].sort_values()
 #application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
-
+coefficients.sort_values('Coef').tail(20)
 def boxplot(variable,dossier):
 
     fig4=go.Figure()
@@ -56,8 +57,8 @@ def boxplot(variable,dossier):
     else:
         stp2=moyenne+ecarty*2
 
-    fig4.add_trace(go.Indicator(
-        mode='gauge+number+delta',
+    fig4.add_trace(go.Indicator(  #Valeur client vs mediane
+        mode='gauge+delta',#'gauge+number+delta'
         title='Valeur client vs mediane:',
         value=data_test_avant.loc[dossier,variable],
         delta={'reference':mediane},        
@@ -79,11 +80,11 @@ def boxplot(variable,dossier):
                     {'range': [q3,maxi], 'color': 'cyan'}
                     ]
               },
-        domain={'x':[0.2,0.8],'y':[0.6,1]}
+        domain={'x':[0.2,0.9],'y':[0.65,1]}
         ))
     
-    fig4.add_trace(go.Indicator(
-        mode='gauge+number+delta',
+    fig4.add_trace(go.Indicator( #Valeur client vs moyenne
+        mode='gauge+delta',
         title='Valeur client vs moyenne:',
         value=data_test_avant.loc[dossier,variable],
         delta={'reference':moyenne},        
@@ -109,7 +110,7 @@ def boxplot(variable,dossier):
 
                     ]
               },
-        domain={'x':[0.2,0.8],'y':[0,0.4]}
+        domain={'x':[0.2,0.9],'y':[0,0.35]}
         ))
 
     fig5=go.Figure()
@@ -117,10 +118,10 @@ def boxplot(variable,dossier):
     fig5.add_trace(go.Box(x=data_train.loc[data_train['label']==0,variable],name='Dossiers sans incident', marker_color='green', boxmean='sd'))
     fig5.add_trace(go.Box(x=data_train.loc[data_train['label']==1,variable],name='Dossiers avec défaut de paiement',marker_color='red', boxmean='sd'))
     fig5.add_trace(go.Box(x=data_train.loc[:,variable],name='Ensemble des dossiers', marker_color='blue', boxmean='sd'))
-    fig6=go.Figure()
+    fig6=jauge(ind=False,prob=50,visib=False)
     
-    fig4.update_layout(height=350)
-    fig5.update_layout(height=350)
+    fig4.update_layout(height=300)
+    fig5.update_layout(height=450)
     fig6.update_layout(height=10)
     
     return fig4,fig5,fig6
@@ -133,15 +134,24 @@ def prediction(dossier):
 def retourne_val(dossier,variable):
     return data_test_avant.loc[dossier,variable]
 
-def impact_coef(dossier,nombre):
+def impact_coef(dossier,nombre,interce):
     ana_coef=coefficients.join(data_test_apres.loc[dossier])
-    ana_coef['impact']=ana_coef['Coef']*ana_coef[dossier]
-    c_neg=ana_coef.sort_values('impact').iloc[:nombre]
-    c_pos=ana_coef.sort_values('impact',ascending=False).iloc[:nombre]
-    fig_neg = px.bar(c_neg, y=c_neg.index, x='impact', color_discrete_sequence=['lime'], orientation='h')
-    fig_pos = px.bar(c_pos, y=c_pos.index, x='impact', color_discrete_sequence=['red'], orientation='h')
+    ana_coef['impact']=round(ana_coef['Coef']*ana_coef[dossier],3)
+    interce.index=ana_coef.columns
+    #ana_coef=ana_coef.append(interce)
+    c_neg_1=ana_coef.loc[ana_coef['impact']<0,:]
+    c_pos_1=ana_coef.loc[ana_coef['impact']>0,:]
+    c_neg=c_neg_1.sort_values('impact').iloc[:nombre]
+    c_pos=c_pos_1.sort_values('impact',ascending=False).iloc[:nombre]
+    c_neg=c_neg.sort_values('impact',ascending=False)
+    c_pos=c_pos.sort_values('impact')
+    
+    fig_neg = px.bar(c_neg, y=c_neg.index, x='impact', color_discrete_sequence=['lime'], orientation='h',text='impact', title='Elements favorables')
+    fig_pos = px.bar(c_pos, y=c_pos.index, x='impact', color_discrete_sequence=['red'], orientation='h',text='impact',title='Elements défavorables')
     scor= ana_coef['impact'].sum()
     return ana_coef, fig_neg,fig_pos,scor
+
+
 
 def jauge(ind,prob,visib):
     if ind:
@@ -175,17 +185,6 @@ def jauge(ind,prob,visib):
     return figu
 
 application_numbers=data_test_apres.index[:100]
-
-
-#selec=['AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE',
-#        'DAYS_EMPLOYED','DAYS_REGISTRATION', 'REGION_RATING_CLIENT',
-#       'REGION_RATING_CLIENT_W_CITY', 
-#        'CREDIT_INCOME_PERCENT', 'ANNUITY_INCOME_PERCENT','DAYS_EMPLOYED_PERCENT', 'CREDIT_TO_GOODS_RATIO',
-#       'INCOME_TO_EMPLOYED_RATIO', 'INCOME_TO_BIRTH_RATIO', 'CREDIT_LENGTH', 'AVERAGE_LOAN_TYPE',
-#       'ACTIVE_LOANS_PERCENTAGE',
-#       'AVG_ENDDATE_FUTURE', 'DEBT_CREDIT_RATIO', 'OVERDUE_DEBT_RATIO',
-#       'AVG_CREDITDAYS_PROLONGED']
-#col_table=['variables', 'client','moyenne','ecart_type','minimum','maximum','mediane']
 
 fig_neg=px.bar()
 fig_pos=px.bar()
@@ -225,18 +224,20 @@ def categ_plots(vari,vale):
     coul_bar=['cyan' if i==True else 'grey' for i in tab_coul]
     print(coul_bar)
     
-    graph1=px.bar(df_gb1,x=df_gb1.values,y=df_gb1.index,orientation='h',
+    graph1=px.bar(df_gb1,y=df_gb1.values,x=df_gb1.index, #orientation='h'
     color_discrete_sequence=coul_bar,color=df_gb1.index, text=df_gb1.values, 
-    labels={'x':'Pourcentage (%)','index':'Catégories'})
+    labels={'y':'Pourcentage (%)','index':'Catégories'})
+
     #graph1.update_layout(visible =tab_coul)
 
-    test4=px.bar(df_gb2t,y=variable,x='value',color='label',barmode='stack', orientation='h',
+    test4=px.bar(df_gb2t,x=variable,y='value',color='label',barmode='stack',
     labels={'value':'Pourcentage (%)',variable:'Catégories'}, text='value')
+    
     test5=px.bar(df_gb3t,y='label',x='value',color=variable, orientation='h',
     labels={'label':'','value':'Pourcentage (%)'}, text='value')
-    graph1.update_layout(height=250)
-    test4.update_layout(height=250)
-    test5.update_layout(height=250)
+    graph1.update_layout(height=275)
+    test4.update_layout(height=275)
+    test5.update_layout(height=200)
     
     return graph1,test4,test5
 
@@ -249,7 +250,7 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.Button("Sidebar", outline=True, color="secondary", className="mr-1", id="btn_sidebar"),
     ],
-    brand="Dashboard",
+    brand="Prêt à Dépenser : Dashboard",
     brand_href="#",
     color="dark",
     dark=True,
@@ -313,29 +314,27 @@ page1=html.Div([
                             dcc.Graph(id='jauge_target',figure=fig1),
                             dcc.Graph(id='score',figure=fig_score),
                                 ],style={'display':'flex'}),
-                        ],style={'width':1600,'height':300,'display':'flex'}),
-                
-                
-                
+                        ],style={'width':1600,'height':200,'display':'flex'}),
                 html.Div([
                         html.Div([   
-                            html.H4('Elements défavorables'),
+                          
                             dcc.Graph(id='positif',figure=fig_pos)
                                  ],style={'width':700}),
                         html.Div([
-                            html.H4('Elements favorables',style={'width':700}),
+                            
                             dcc.Graph(id='negatif',figure=fig_neg)
                                  ],style={'width':700}),
-                        ],style={'display':'flex','width':1600}),
+                        ],style={'display':'flex','width':1600,'height':600}),
 
-               ])
+               ],style={'width':1600,'height':800})
 
 page2=html.Div([ 
                html.Div('Numéro de dossier:'),
                dcc.Dropdown(id='liste_2a',options=[{'label': i, 'value': i} for i in application_numbers]),
                html.Div('Sélectionner une variable:'),
                dcc.Dropdown(id='liste_2b',options=[{'label': i, 'value': i} for i in data_train.iloc[:,:-1].columns]),
-               dcc.Graph(id='analyse_variable',style={'height':300}),
+               html.H4(id='lib_p2'),
+               dcc.Graph(id='analyse_variable'),#,style={'height':300}),
                dcc.Graph(id='analyse_variable2'),
                dcc.Graph(id='analyse_variable3')
                           
@@ -423,6 +422,7 @@ def toggle_sidebar(n, nclick):
 
 # this callback uses the current pathname to set the active state of the
 # corresponding nav link to true, allowing users to tell see page they are on
+
 @app.callback(
     [Output(f"page-{i}-link", "active") for i in range(1, 4)],
     [Input("url", "pathname")],
@@ -464,18 +464,22 @@ def update_page1(ind):
     if ind:
         clas,prob = prediction(ind)
         fig1=jauge(ind,prob, visib=True)
-        _,tneg,tpos,_=impact_coef(ind,nombre=10)
+        _,tneg,tpos,_=impact_coef(ind,nombre=10,interce=intercep)
         fig_score=go.Figure(go.Indicator(title={'text':'Score du dossier :'}\
             ,value=round(np.log(prob/(1-prob)),2)))
         if clas ==1:
             phra="Refus du dossier en raison d'une probabilité de défaut de paiement supérieure à 50%"
         else:
             phra="Dossier accepté : la probabilité de défaut de paiement est inférieure à 50%"
-
+        fig1.update_layout(margin=dict(l=20, r=20, t=50, b=20))
+        fig_score.update_layout(margin=dict(l=20, r=20, t=50, b=20))
+        tneg.update_layout(height=550)
+        tpos.update_layout(height=550)
+        
     else:
         fig1=jauge(ind=False,prob=50,visib=False)
-        tneg=go.Figure(go.Bar(visible=False))
-        tpos=go.Figure(go.Bar(visible=False))
+        tneg=jauge(ind=False,prob=50,visib=False)
+        tpos=jauge(ind=False,prob=50,visib=False)
         fig_score=go.Figure(go.Indicator(visible=False))
         phra=""
         
@@ -484,7 +488,10 @@ def update_page1(ind):
 @app.callback(# page2
     Output('analyse_variable','figure'),
     Output('analyse_variable2','figure'),
-    Output('analyse_variable3','figure'),    
+    Output('analyse_variable3','figure'),  
+     
+      
+    Output('lib_p2','children'),
     Input('liste_2b','value'),
     Input('liste_2a','value')
             )
@@ -492,21 +499,26 @@ def update_page2(variable, dossier):
     if variable:
         if dossier :
             vale=retourne_val(dossier,variable)
+            phra_p2='{} du dossier {} : {}'.format(variable,dossier,vale)
             if np.isin(variable,data_train[:-1].select_dtypes('number').columns):
                 fig4,fig5,fig6=boxplot(variable,dossier)
-            
+                            
             else :
                 fig4,fig5,fig6=categ_plots(variable,vale)
+                
         else:
-            fig4=go.Figure(go.Bar(visible=False))
-            fig5=go.Figure(go.Bar(visible=False))
-            fig6=go.Figure(go.Bar(visible=False))
+            fig4=jauge(ind=False,prob=50,visib=False)
+            fig5=jauge(ind=False,prob=50,visib=False)
+            fig6=jauge(ind=False,prob=50,visib=False)
+            
+            phra_p2=''
     else :
-            fig4=go.Figure(go.Bar(visible=False))
-            fig5=go.Figure(go.Bar(visible=False))
-            fig6=go.Figure(go.Bar(visible=False))
-        
-    return fig4,fig5,fig6
+            fig4=jauge(ind=False,prob=50,visib=False)
+            fig5=jauge(ind=False,prob=50,visib=False)
+            fig6=jauge(ind=False,prob=50,visib=False)
+            
+            phra_p2=''
+    return fig4,fig5,fig6,phra_p2
 
 
 @app.callback(# page3
@@ -553,41 +565,16 @@ def update_page3(dossier, val_bouton):
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8086)
-
-
 ############test################
+coefficients2=coefficients.copy()
+coefficients2=coefficients2.sort_values('Coef')
+figw = go.Figure(go.Waterfall(
+    name = "20", orientation = "h",
+    #measure = ["relative", "relative", "total", "relative", "relative", "total"],
+    y =coefficients2.index,
+    textposition = "outside",
+#   text = '{} : {}'.format(coefficients.index,coefficients['Coef']),
+    x = coefficients2['Coef'],
+    #connector = {"line":{"color":"rgb(63, 63, 63)"}},
+))
 
-a,_,_,_=impact_coef(412932,10)
-apos=a.loc[a['impact']>0,'impact'].sort_values()
-aneg=a.loc[a['impact']<0,'impact'].sort_values(ascending=False)
-
-tt=go.Figure(go.Bar(name='impact_neg',x=apos.index,y=apos.values))
-#tt.update_layout(barmode='group')
-#tt.show()
-
-
-dossier =135480
-
-data2=data_train.copy()
-data2=data2.append(data_test_avant.loc[dossier])
-data2['label']=data2['label'].fillna('Dossier Client')
-
-gg=px.histogram(data2,x='AMT_CREDIT', marginal='box', color='label',histnorm='probability density')
-gg.show()
-
-
-
-fig = make_subplots(rows=3, cols=1, shared_xaxes=True)
-
-trace0 = go.Histogram(x=data2.loc[data2['label']==0,'AMT_CREDIT'], 
-name='Dossiers sans incident',marker_color='green')
-trace1 = go.Histogram(x=data2.loc[data2['label']==1,'AMT_CREDIT'],
-name='Dossiers avec défaut de paiement', marker_color='red')
-trace2 = go.Histogram(x=data2.loc[data2['label']=='Dossier Client','AMT_CREDIT'],
-name='Dossier client',marker_color='blue')
-
-fig.append_trace(trace0, 1, 1)
-fig.append_trace(trace1, 2, 1)
-fig.append_trace(trace2, 3, 1)
-
-fig.show()
