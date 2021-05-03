@@ -18,9 +18,6 @@ from imblearn.over_sampling import SMOTE,RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler,ClusterCentroids
 from sklearn.ensemble import RandomForestClassifier
 from joblib import dump,load
-import seaborn as sns
-from tabulate import tabulate
-
 
 pd.set_option('display.max_columns', 40)
 pd.set_option('display.max_rows', 150)
@@ -37,18 +34,20 @@ path='/home/olivier/Desktop/openclassrooms/P7/data/'
 #bureau=pd.read_csv(path+'bureau.csv')
 #application_test=pd.read_csv(path+'application_test.csv')
 application_train=pd.read_csv(path+'application_train.csv')
-len(application_train)
-imbala=application_train['TARGET'].value_counts(normalize=True)
-imbala=round(imbala*100,1)
-plt.bar(imbala.index,imbala.values)
-plt.xticks(imbala.index)
-plt.xlabel('Labels')
-plt.ylabel('Pourcentage du dataset (%)')
-plt.yticks(np.arange(0,105,5))
-plt.show(block=False)
 
 
-imbala
+graph_imbala=False
+if graph_imbala:
+    imbala=application_train['TARGET'].value_counts(normalize=True)
+    imbala=round(imbala*100,1)
+    plt.bar(imbala.index,imbala.values)
+    plt.xticks(imbala.index)
+    plt.xlabel('Labels')
+    plt.ylabel('Pourcentage du dataset (%)')
+    plt.yticks(np.arange(0,105,5))
+    plt.show(block=False)
+
+
 #feature engeneering
 deja_fait=True
 if not deja_fait:
@@ -103,7 +102,7 @@ tests=False
 if tests:
     #Test des différents hyper-paramètres
     meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
-    param_lr={'C':[0.01,0.1,1,10],'penalty':['l1','l2']}
+    param_lr={'C':[0.01,0.03,0.1,0.3,1],'penalty':['l1','l2']}
     #parammd=[7,10,13,16]
     #meth=['Aucune','Class_weight','SMOTE', 'RandomUnderSampler']
     #algo=['RF','LR'] 
@@ -113,24 +112,23 @@ if tests:
    
     df_resultats_2['F_beta']=(5*df_resultats_2['Precision']*df_resultats_2['Recall'])\
     /((4*df_resultats_2['Precision'])+df_resultats_2['Recall'])
-    df_resultats_2.to_csv(path+'df_resultats_apres.csv')
+    df_resultats_2.to_csv(path+'df_resultats_apres5.csv')
 
-resultats_finaux=pd.read_csv(path+'df_resultats_apres.csv', index_col=0)
+resultats_finaux3=pd.read_csv(path+'df_resultats_apres3.csv', index_col=0)
 
-resultats_finaux
+resultats_finaux3
+
+#rus = RandomUnderSampler(random_state=0)
+#df_final_train_v2, y_train_v2 = rus.fit_resample\
+#(np.array(df_final_train), np.array(y_train))
 
 
-rus = RandomUnderSampler(random_state=0)
-df_final_train_v2, y_train_v2 = rus.fit_resample\
-(np.array(df_final_train), np.array(y_train))
-
-
-lr2=LogisticRegression(max_iter=2000,random_state=0, C=0.01)#5,penalty='l1',solver='saga')
-lr2.fit(df_final_train_v2, y_train_v2)
+lr2=LogisticRegression(max_iter=2000,random_state=0, C=0.01, class_weight='balanced')#5,penalty='l1',solver='saga')
+lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
 y_prob=lr2.predict_proba(df_final_test).T[1]
 
-acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=False)
+acc, mat, a_u_c, f1, auc_pr=fc.scores(y_test,y_pred,y_prob,lr2,df_final_test, graphs=True)
 
 meil_resultat=pd.Series({'Accuracy':acc,'ROC_AUC':a_u_c,'Precision_Recall_AUC' : auc_pr,'F1_score':f1,
         'Confusion_matrix':mat,'True Negative':mat[0,0],'True Positive':mat[1,1],
@@ -180,4 +178,6 @@ df_coef.to_csv(path+'coefficients.csv')
 # [ 1570  3522]]
 #Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.24 F1 : 0.259*
 
-print(tabulate(resultats_finaux, headers=resultats_finaux.columns))
+#Matrice de confusion :[[42257 18523]
+# [ 1567  3525]]
+#Accuracy : 0.695 ROC AUC : 0.759 AUC Precision-Recall : 0.24 F1 : 0.26

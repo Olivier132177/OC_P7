@@ -231,18 +231,12 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
 
     df['DAYS_BIRTH'] = abs(df['DAYS_BIRTH'])
     df['family_members_more7']= np.where(df['CNT_FAM_MEMBERS']>7,'Oui','Non')
-    df['islowskilled_labour']= np.where(df['OCCUPATION_TYPE']=='Low-skill Laborers','Oui','Non')
-    df['is_Maternity_leave']= np.where(df['NAME_INCOME_TYPE'] =='Maternity leave' ,'Oui','Non')
-    df['is_unemployed']= np.where(df['NAME_INCOME_TYPE'] =='Unemployed' ,'Oui','Non')
+    #df['islowskilled_labour']= np.where(df['OCCUPATION_TYPE']=='Low-skill Laborers','Oui','Non')
+    #df['is_Maternity_leave']= np.where(df['NAME_INCOME_TYPE'] =='Maternity leave' ,'Oui','Non')
+    #df['is_unemployed']= np.where(df['NAME_INCOME_TYPE'] =='Unemployed' ,'Oui','Non')
 
     df['cnt_childern_more6']= np.where(df['CNT_CHILDREN'] > 6,'Oui','Non')
-    plt.style.use('fivethirtyeight')
-
-    # Plot the distribution of ages in years
-    plt.hist(df['DAYS_BIRTH'] / 365, edgecolor = 'k', bins = 25)
-    plt.title('Age of Client'); plt.xlabel('Age (years)'); plt.ylabel('Count')
-
-
+    
     df = df[df['CODE_GENDER']!='XNA']
 
     df['AGE_RANGE'] = df['DAYS_BIRTH'].apply(lambda x: get_age_label(x))
@@ -275,27 +269,6 @@ def feat_eng(application_train, application_test): # de notebookd30915a6f4 (sur 
 
     external_sources['SK_ID_CURR'] = df['SK_ID_CURR'].tolist()
     df = df.merge(external_sources, on = 'SK_ID_CURR', how = 'left')
-    drop_list = [
-            'CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_START',
-            'FLAG_EMP_PHONE', 'FLAG_MOBIL', 'FLAG_CONT_MOBILE', 'FLAG_EMAIL', 'FLAG_PHONE',
-            'FLAG_OWN_REALTY', 'REG_REGION_NOT_LIVE_REGION', 'REG_REGION_NOT_WORK_REGION',
-            'REG_CITY_NOT_WORK_CITY', 'OBS_30_CNT_SOCIAL_CIRCLE', 'OBS_60_CNT_SOCIAL_CIRCLE',
-            'AMT_REQ_CREDIT_BUREAU_DAY', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_YEAR', 
-            'COMMONAREA_MODE', 'NONLIVINGAREA_MODE', 'ELEVATORS_MODE', 'NONLIVINGAREA_AVG',
-            'FLOORSMIN_MEDI', 'LANDAREA_MODE', 'NONLIVINGAREA_MEDI', 'LIVINGAPARTMENTS_MODE',
-            'FLOORSMIN_AVG', 'LANDAREA_AVG', 'FLOORSMIN_MODE', 'LANDAREA_MEDI',
-            'COMMONAREA_MEDI', 'YEARS_BUILD_AVG', 'COMMONAREA_AVG', 'BASEMENTAREA_AVG',
-            'BASEMENTAREA_MODE', 'NONLIVINGAPARTMENTS_MEDI', 'BASEMENTAREA_MEDI', 
-            'LIVINGAPARTMENTS_AVG', 'ELEVATORS_AVG', 'YEARS_BUILD_MEDI', 'ENTRANCES_MODE',
-            'NONLIVINGAPARTMENTS_MODE', 'LIVINGAREA_MODE', 'LIVINGAPARTMENTS_MEDI',
-            'YEARS_BUILD_MODE', 'YEARS_BEGINEXPLUATATION_AVG', 'ELEVATORS_MEDI', 'LIVINGAREA_MEDI',
-            'YEARS_BEGINEXPLUATATION_MODE', 'NONLIVINGAPARTMENTS_AVG', 'HOUSETYPE_MODE',
-            'FONDKAPREMONT_MODE', 'EMERGENCYSTATE_MODE'   ,'OWN_CAR_AGE','CAR_TO_EMPLOYED_RATIO', 
-            'CAR_TO_BIRTH_RATIO', 'EXT_SOURCES_PROD', 'APARTMENTS_AVG', 'APARTMENTS_MODE',
-            'APARTMENTS_MEDI','ENTRANCES_AVG', 'ENTRANCES_MEDI', 'LIVINGAREA_AVG', 'FLOORSMAX_MEDI', 
-            'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE'
-        ]
-    #df.drop(drop_list,axis=1,inplace=True)
     return df
 
 def get_age_label(days_birth):
@@ -507,10 +480,10 @@ def post_feat_eng(application_final):
     'State servant':'State servant', 
     'Commercial associate':'other',
     'Pensioner':'Pensioner',
-    'Unemployed':'other', 
+    'Unemployed':'Unemployed', 
     'Student':'other', 
     'Businessman':'other', 
-    'Maternity leave':'other'}
+    'Maternity leave':'Maternity leave'}
 
     dict_occupation_type={
     'Laborers':'Laborers', 
@@ -525,7 +498,7 @@ def post_feat_eng(application_final):
     'Medicine staff':'Medicine staff', 
     'Security staff':'Security staff',
     'Waiters/barmen staff':'Waiters/barmen staff', 
-    'Low-skill Laborers':'other', 
+    'Low-skill Laborers':'Low-skill Laborers', 
     'Realty agents':'other',
     'Secretaries':'Secretaries', 
     'High skill tech staff':'High skill tech staff', 
@@ -599,9 +572,9 @@ def post_feat_eng(application_final):
 
     variables_supprimees=['AGE_RANGE','APARTMENTS_MEDI','YEARS_BUILD_MODE']#,'SK_ID_CURR']
 
-    variables_supprimees_2=['CNT_CHILDREN', 'CNT_FAM_MEMBERS', 'HOUR_APPR_PROCESS_START',
+    variables_supprimees_2=['HOUR_APPR_PROCESS_START',
                 'FLAG_EMP_PHONE', 'FLAG_MOBIL', 'FLAG_CONT_MOBILE', 'FLAG_EMAIL', 'FLAG_PHONE',
-                'FLAG_OWN_REALTY', 'REG_REGION_NOT_LIVE_REGION', 'REG_REGION_NOT_WORK_REGION',
+                 'REG_REGION_NOT_LIVE_REGION', 'REG_REGION_NOT_WORK_REGION',
                 'REG_CITY_NOT_WORK_CITY', 'OBS_30_CNT_SOCIAL_CIRCLE', 'OBS_60_CNT_SOCIAL_CIRCLE',
                 'AMT_REQ_CREDIT_BUREAU_DAY', 'AMT_REQ_CREDIT_BUREAU_MON', 'AMT_REQ_CREDIT_BUREAU_YEAR', 
                 'COMMONAREA_MODE', 'NONLIVINGAREA_MODE', 'ELEVATORS_MODE', 'NONLIVINGAREA_AVG',
@@ -613,29 +586,18 @@ def post_feat_eng(application_final):
                 'NONLIVINGAPARTMENTS_MODE', 'LIVINGAREA_MODE', 'LIVINGAPARTMENTS_MEDI',
                 'YEARS_BUILD_MODE', 'YEARS_BEGINEXPLUATATION_AVG', 'ELEVATORS_MEDI', 'LIVINGAREA_MEDI',
                 'YEARS_BEGINEXPLUATATION_MODE', 'NONLIVINGAPARTMENTS_AVG', 'HOUSETYPE_MODE',
-                'FONDKAPREMONT_MODE', 'EMERGENCYSTATE_MODE'   ,'OWN_CAR_AGE','CAR_TO_EMPLOYED_RATIO', 
+                'FONDKAPREMONT_MODE', 'EMERGENCYSTATE_MODE' ,'OWN_CAR_AGE','CAR_TO_EMPLOYED_RATIO', 
                 'CAR_TO_BIRTH_RATIO', 'EXT_SOURCES_PROD', 'APARTMENTS_AVG', 'APARTMENTS_MODE',
                 'APARTMENTS_MEDI','ENTRANCES_AVG', 'ENTRANCES_MEDI', 'LIVINGAREA_AVG', 'FLOORSMAX_MEDI', 
                 'FLOORSMAX_AVG','FLOORSMAX_MODE', 'YEARS_BEGINEXPLUATATION_MEDI', 'TOTALAREA_MODE',
                 'EXT_SOURCE_1_y','EXT_SOURCE_2_y','EXT_SOURCE_3_y','DAYS_BIRTH_y',
                 'FLAG_DOCUMENT_2','AMT_REQ_CREDIT_BUREAU_HOUR','FLAG_DOCUMENT_12','FLAG_DOCUMENT_4',
                 'FLAG_DOCUMENT_8','FLAG_DOCUMENT_9','FLAG_DOCUMENT_5','WALLSMATERIAL_MODE',
-                'FLAG_DOCUMENT_19','EXT_SOURCES_MEAN']
+                'FLAG_DOCUMENT_19','EXT_SOURCES_MEAN','FLAG_DOCUMENT_10','is_unemployed','is_Maternity_leave']
 
-    meilleures_variables=['TARGET','INCOME_TO_BIRTH_RATIO','AMT_INCOME_TOTAL',
-    'ORGANIZATION_TYPE','AMT_GOODS_PRICE','AMT_CREDIT','CREDIT_TERM','FLAG_DOCUMENT_13',
-    'FLAG_DOCUMENT_3','NAME_EDUCATION_TYPE','FLAG_DOCUMENT_14','FLAG_DOCUMENT_6',
-    'CREDIT_LENGTH','EXT_SOURCE_3_x','FLAG_DOCUMENT_16','EXT_SOURCES_VAR','EXT_SOURCES_MAX',
-    'DEBT_CREDIT_RATIO','OCCUPATION_TYPE','NAME_TYPE_SUITE','FLAG_DOCUMENT_18',
-    'CODE_GENDER','FLAG_DOCUMENT_5','NAME_INCOME_TYPE','FLAG_DOCUMENT_8','OCCUPATION_TYPE',
-    'NAME_HOUSING_TYPE','FLAG_DOCUMENT_9','FLAG_DOCUMENT_15']
 
-    ajout=False
-    if ajout:
-        application_final=application_final[meilleures_variables]
-    elif not ajout:
-        application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees, invert=True)]
-        application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees_2, invert=True)]
+    application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees, invert=True)]
+    application_final=application_final.loc[:,np.isin(application_final.columns,variables_supprimees_2, invert=True)]
     colonnes_retenues=application_final.columns
 
     nom_colonnes={'NAME_CONTRACT_TYPE':'TYPE_CONTRAT',
@@ -718,7 +680,11 @@ def post_feat_eng(application_final):
                 'OVERDUE_DEBT_RATIO':'OVERDUE_DEBT_RATIO',
                 'AVG_CREDITDAYS_PROLONGED':'AVG_CREDITDAYS_PROLONGED', 
                 'LN_REVENU_TOTAL':'LN DES REVENUS CLIENT',
-                'TARGET':'TARGET'}
+                'TARGET':'TARGET',
+                'CNT_CHILDREN':'NOMBRE_D_ENFANTS', 
+                'CNT_FAM_MEMBERS':'MEMBRES_DE_LA_FAMILLE',
+                'FLAG_OWN_REALTY':'POSSEDE_UN_LOGEMENT',
+                'FLAG_OWN_CAR':'POSSEDE_UNE_VOITURE'}
 
     application_final=application_final.rename(columns=nom_colonnes)
     application_final['AGE']=application_final['AGE']//365.25
