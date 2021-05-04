@@ -146,8 +146,8 @@ def impact_coef(dossier,nombre,interce):
     c_neg=c_neg.sort_values('impact',ascending=False)
     c_pos=c_pos.sort_values('impact')
     
-    fig_neg = px.bar(c_neg, y=c_neg.index, x='impact', color_discrete_sequence=['lime'], orientation='h',text='impact', title='Elements favorables')
-    fig_pos = px.bar(c_pos, y=c_pos.index, x='impact', color_discrete_sequence=['red'], orientation='h',text='impact',title='Elements défavorables')
+    fig_neg = px.bar(c_neg, y=c_neg.index, x='impact', color_discrete_sequence=['lime'], orientation='h',text='impact', title='Top 10 élements favorables')
+    fig_pos = px.bar(c_pos, y=c_pos.index, x='impact', color_discrete_sequence=['red'], orientation='h',text='impact',title='Top 10 élements défavorables')
     scor= ana_coef['impact'].sum()
     return ana_coef, fig_neg,fig_pos,scor
 
@@ -531,12 +531,12 @@ def update_page3(dossier, val_bouton):
     col_info_client=['SEXE', 'POSSEDE_UNE_VOITURE', 'REVENUS_CLIENTS',
        'ACCOMPAGNATEUR', 'TYPE_DE_REVENUS', 'NIVEAU_D_ETUDES',
        'STATUT FAMILIAL', 'LOGEMENT_ACTUEL',
-       'AGE_EN_JOURS', 'EMPLOYE DEPUIS',
+       'AGE', 'EMPLOYE DEPUIS',
        'PROFESSION','TYPE_SOCIETE']
     col_info_pret=['TYPE_CONTRAT', 'MONTANT_CREDIT', 'MONTANT ANNUITE', 'PRIX_DU_BIEN',
        'CREDIT_TERM', 'DUREE_DU_CREDIT']
     col_info_elements=['A_FOURNI_LE_DOCUMENT_3', 'A_FOURNI_LE_DOCUMENT_6',
-       'A_FOURNI_LE_DOCUMENT_7', 'A_FOURNI_LE_DOCUMENT_10',
+       'A_FOURNI_LE_DOCUMENT_7', 
        'A_FOURNI_LE_DOCUMENT_11', 'A_FOURNI_LE_DOCUMENT_13',
        'A_FOURNI_LE_DOCUMENT_14', 'A_FOURNI_LE_DOCUMENT_15',
        'A_FOURNI_LE_DOCUMENT_16', 'A_FOURNI_LE_DOCUMENT_17',

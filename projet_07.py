@@ -122,7 +122,6 @@ resultats_finaux3
 #df_final_train_v2, y_train_v2 = rus.fit_resample\
 #(np.array(df_final_train), np.array(y_train))
 
-
 lr2=LogisticRegression(max_iter=2000,random_state=0, C=0.01, class_weight='balanced')#5,penalty='l1',solver='saga')
 lr2.fit(df_final_train, y_train)
 y_pred=lr2.predict(df_final_test)
@@ -166,18 +165,8 @@ df_coef=df_coef.set_index('Variables')
 df_coef.sort_values('AbsCoef').iloc[0:20]
 df_coef.to_csv(path+'coefficients.csv')
 
-
 ########## Meilleurs résultats obtenus ############
 #Méthode : Class_weight C : 0.01
-#Matrice de confusion :[[42254 18526]
-# [ 1567  3525]]
-#Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.241 F1 : 0.26
-
-########Derniere tentative
-#Matrice de confusion :[[42247 18533]
-# [ 1570  3522]]
-#Accuracy : 0.695 ROC AUC : 0.76 AUC Precision-Recall : 0.24 F1 : 0.259*
-
 #Matrice de confusion :[[42257 18523]
 # [ 1567  3525]]
 #Accuracy : 0.695 ROC AUC : 0.759 AUC Precision-Recall : 0.24 F1 : 0.26
