@@ -17,13 +17,12 @@ import matplotlib.pyplot as plt
 
 modele=load('modele_sauvegarde.joblib')
 
-data_test_apres=pd.read_csv('data/df_test_prep_pour_dashboard.csv', index_col=0)
-data_test_avant=pd.read_csv('data/df_test_avant_transfo_pour_dashboard.csv', index_col=0)
-data_train=pd.read_csv('data/df_train_pour_dashboard.csv', index_col=0)
-coefficients=pd.read_csv('data/coefficients.csv',index_col=0)
+data_test_apres=pd.read_csv('df_test_prep_pour_dashboard.csv', index_col=0)
+data_test_avant=pd.read_csv('df_test_avant_transfo_pour_dashboard.csv', index_col=0)
+data_train=pd.read_csv('df_train_pour_dashboard.csv', index_col=0)
+coefficients=pd.read_csv('coefficients.csv',index_col=0)
 inte=round(modele.intercept_[0],3)
 intercep=pd.Series([inte,np.abs(inte),1,inte],name='Valeur_d_origine')
-data_train['REVENUS_CLIENTS'].sort_values()
 #application_final=pd.read_csv('data/df_pour_dashboard.csv', index_col=0)
 coefficients.sort_values('Coef').tail(20)
 def boxplot(variable,dossier):
