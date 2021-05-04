@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 
 
-def create_bureau_features(bureau): # de HOME    CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
+def create_bureau_features(bureau): # de HOME CREDIT - BUREAU DATA - FEATURE ENGINEERING sur Kaggle
 #1ere partie du feature engeneering
     #FEATURE 1 - NUMBER OF PAST LOANS PER CUSTOMER
     B = bureau
