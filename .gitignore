@@ -9,6 +9,7 @@
 
 #  data
 data/*
+data_dashboard/*
 
 # .pem files
 *.pem
