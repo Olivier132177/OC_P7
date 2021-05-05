@@ -1,0 +1,13 @@
+django
+gunicorn
+django-heroku
+dash
+pandas
+numpy
+dash-bootstrap-components
+joblib
+sklearn
+matplotlib
+python-dotenv
+requests
+
