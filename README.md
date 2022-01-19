@@ -1,11 +1,21 @@
 # OC_Projet6
-projet 6 du parcours Data Scientist Openclassrooms "Implémentez un modèle de scoring"
 
-Au sein d'une société financière, vous allez développer et implémenter un modèle de scoring pour aider les équipes métiers à accorder un crédit à un
-client.
-Compétences cibles :
-- Déployer un modèle via une API dans le Web
-- Réaliser un dashboard pour présenter son travail de modélisation
-- Rédiger une note méthodologique afin de communiquer sa démarche de modélisation
-- Utiliser un logiciel de version de code pour assurer l’intégration du modèle
-- Présenter son travail de modélisation à l'oral
+Implémentez un modèle de scoring
+
+Vous êtes Data Scientist au sein d'une société financière, nommée "Prêt à dépenser", qui propose des crédits à la consommation pour des personnes ayant peu ou
+pas du tout d'historique de prêt.L’entreprise souhaite développer un modèle de scoring de la probabilité de défaut de paiement du client pour étayer la décision
+d'accorder ou non un prêt à un client potentiel en s’appuyant sur des sources de données variées (données comportementales, données provenant d'autres institutions financières, etc.).
+De plus, les chargés de relation client ont fait remonter le fait que les clients sont de plus en plus demandeurs de transparence vis-à-vis des décisions
+d’octroi de crédit. Cette demande de transparence des clients va tout à fait dans le sens des valeurs que l’entreprise veut incarner. Elle décide donc de développer un dashboard interactif pour que les chargés de relation client puissent à la fois expliquer de façon la plus transparente possible les
+décisions d’octroi de crédit, mais également permettre à leurs clients de disposer de leurs informations personnelles et de les explorer facilement.
+
+Les données
+
+Voici les données dont vous aurez besoin pour réaliser le dashboard. Pour plus de
+simplicité, vous pouvez les télécharger à cette adresse https://s3-eu-west-1.amazonaws.com/static.oc-static.com/prod/courses/files/Parcours_data_scientist/Projet+-+Impl%C3%A9menter+un+mod%C3%A8le+de+scoring/Projet+Mise+en+prod+-+home-credit-default-risk.zip
+Vous aurez sûrement besoin de joindre les différentes tables entre elles.
+
+Votre mission
+
+1. Construire un modèle de scoring qui donnera une prédiction sur la probabilité de faillite d'un client de façon automatique.
+2. Construire un dashboard interactif à destination des gestionnaires de la relation client permettant d'interpréter les prédictions faites par le modèle et d’améliorer la connaissance client des chargés de relation client.
